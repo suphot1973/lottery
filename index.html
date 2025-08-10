@@ -572,7 +572,6 @@
         let winningNumber = '';
         let currentSelectedNumber = '';
         let statisticsData = {};
-        let isOnlineMode = false;
         
         // Google Apps Script Web App URL - ใส่ URL ของ Web App ที่ Deploy แล้ว
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhtGZNC34KFlq42T-qHu-U70eT7lt2Onb2T37V9kfq3INkty9kGiAsrHTp6TG6oOgq/exec';
@@ -582,12 +581,12 @@
             initializeSystem();
         });
 
-        // Initialize system with fallback to localStorage
+        // Initialize system with Google Sheets connection
         async function initializeSystem() {
             try {
                 // Show loading
                 Swal.fire({
-                    title: 'กำลังโหลดข้อมูล...',
+                    title: 'กำลังเชื่อมต่อ Google Sheets...',
                     text: 'กรุณารอสักครู่',
                     allowOutsideClick: false,
                     didOpen: () => {
@@ -600,35 +599,18 @@
                     throw new Error('URL ของ Google Apps Script ยังไม่ได้ตั้งค่า');
                 }
 
-                // Try to connect to Google Sheets first
+                // Connect to Google Sheets
                 console.log('🔗 Attempting to connect to Google Sheets...');
                 console.log('📍 Script URL:', SCRIPT_URL);
 
-                try {
-                    await testGoogleSheetsConnection();
-                    isOnlineMode = true;
-                    
-                    // Load data from Google Sheets
-                    await loadBookingsFromSheets();
-                    await loadStatisticsFromSheets();
-                    await loadWinningNumberFromSheets();
-                    
-                    console.log('✅ Connected to Google Sheets successfully');
-                    
-                } catch (sheetsError) {
-                    console.warn('⚠️ Google Sheets connection failed:', sheetsError.message);
-                    isOnlineMode = false;
-                    
-                    // Show detailed error information
-                    console.error('Connection Error Details:', {
-                        error: sheetsError.message,
-                        url: SCRIPT_URL,
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // Fallback to localStorage
-                    loadDataFromLocalStorage();
-                }
+                await testGoogleSheetsConnection();
+                
+                // Load data from Google Sheets
+                await loadBookingsFromSheets();
+                await loadStatisticsFromSheets();
+                await loadWinningNumberFromSheets();
+                
+                console.log('✅ Connected to Google Sheets successfully');
 
                 // Update UI
                 generateNumberGrid();
@@ -639,57 +621,38 @@
                 // Close loading and show welcome
                 Swal.close();
                 
-                if (isOnlineMode) {
-                    Swal.fire({
-                        title: '🎯 ยินดีต้อนรับ!',
-                        text: 'ระบบออกเลขท้ายสองตัว (เชื่อมต่อ Google Sheets)',
-                        icon: 'success',
-                        timer: 3000,
-                        showConfirmButton: false,
-                        toast: true,
-                        position: 'top-end'
-                    });
-                } else {
-                    // Show detailed offline mode message
-                    Swal.fire({
-                        title: '⚠️ โหมดออฟไลน์',
-                        html: `
-                            <div style="text-align: left;">
-                                <p><strong>สาเหตุที่เป็นไปได้:</strong></p>
-                                <ul style="margin: 10px 0;">
-                                    <li>URL ของ Google Apps Script ไม่ถูกต้อง</li>
-                                    <li>Web App ยังไม่ได้ Deploy หรือไม่ได้ตั้งค่าสิทธิ์</li>
-                                    <li>Google Sheets ไม่ได้แชร์สิทธิ์</li>
-                                    <li>ปัญหาการเชื่อมต่ออินเทอร์เน็ต</li>
-                                </ul>
-                                <p><small>ระบบจะทำงานในโหมดออฟไลน์ ข้อมูลจะเก็บในเครื่องเท่านั้น</small></p>
-                            </div>
-                        `,
-                        icon: 'warning',
-                        confirmButtonText: 'เข้าใจแล้ว',
-                        width: '500px'
-                    });
-                }
+                Swal.fire({
+                    title: '🎯 ยินดีต้อนรับ!',
+                    text: 'ระบบออกเลขท้ายสองตัว (เชื่อมต่อ Google Sheets)',
+                    icon: 'success',
+                    timer: 3000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
 
             } catch (error) {
                 console.error('Error initializing system:', error);
                 
-                // Fallback to localStorage if everything fails
-                isOnlineMode = false;
-                loadDataFromLocalStorage();
-                
-                generateNumberGrid();
-                updateStatistics();
-                updateProgress();
-                showWinnerAnnouncement();
-                
                 Swal.close();
                 
                 Swal.fire({
-                    title: '❌ เกิดข้อผิดพลาด',
-                    text: error.message || 'ไม่สามารถเริ่มต้นระบบได้',
+                    title: '❌ ไม่สามารถเชื่อมต่อได้',
+                    html: `
+                        <div style="text-align: left;">
+                            <p><strong>สาเหตุที่เป็นไปได้:</strong></p>
+                            <ul style="margin: 10px 0;">
+                                <li>URL ของ Google Apps Script ไม่ถูกต้อง</li>
+                                <li>Web App ยังไม่ได้ Deploy หรือไม่ได้ตั้งค่าสิทธิ์</li>
+                                <li>Google Sheets ไม่ได้แชร์สิทธิ์</li>
+                                <li>ปัญหาการเชื่อมต่ออินเทอร์เน็ต</li>
+                            </ul>
+                            <p><strong>กรุณาตรวจสอบการตั้งค่าแล้วรีเฟรชหน้าใหม่</strong></p>
+                        </div>
+                    `,
                     icon: 'error',
-                    confirmButtonText: 'ตกลง'
+                    confirmButtonText: 'ตกลง',
+                    width: '500px'
                 });
             }
         }
@@ -757,56 +720,10 @@
             }
         }
 
-        // Load data from localStorage (fallback)
-        function loadDataFromLocalStorage() {
-            try {
-                const savedBookings = localStorage.getItem('lotteryBookings');
-                const savedWinner = localStorage.getItem('lotteryWinner');
-                
-                bookingData = savedBookings ? JSON.parse(savedBookings) : {};
-                winningNumber = savedWinner || '';
-                
-                // Calculate statistics from local data
-                calculateLocalStatistics();
-                
-                console.log('📱 Loaded data from localStorage');
-                
-            } catch (error) {
-                console.error('Error loading from localStorage:', error);
-                bookingData = {};
-                winningNumber = '';
-                statisticsData = {};
-            }
-        }
 
-        // Save data to localStorage (fallback)
-        function saveDataToLocalStorage() {
-            try {
-                localStorage.setItem('lotteryBookings', JSON.stringify(bookingData));
-                localStorage.setItem('lotteryWinner', winningNumber);
-                console.log('💾 Data saved to localStorage');
-            } catch (error) {
-                console.error('Error saving to localStorage:', error);
-            }
-        }
-
-        // Calculate statistics from local data
-        function calculateLocalStatistics() {
-            const bookings = Object.values(bookingData);
-            statisticsData = {
-                totalSelected: bookings.length,
-                totalPaid: bookings.filter(b => b.paymentStatus === 'paid').length,
-                totalPending: bookings.filter(b => b.paymentStatus === 'pending').length,
-                totalAmount: bookings.filter(b => b.paymentStatus === 'paid').length * 80
-            };
-        }
 
         // API Functions for Google Sheets Integration
         async function callGoogleScript(action, data = {}) {
-            if (!isOnlineMode) {
-                throw new Error('ระบบทำงานในโหมดออฟไลน์');
-            }
-            
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -1031,25 +948,18 @@
                     timestamp: new Date().toISOString()
                 };
                 
-                if (isOnlineMode) {
-                    // Save to Google Sheets
-                    const result = await saveBookingToSheets(bookingInfo);
-                    
-                    if (result.success) {
-                        // Update local data
-                        bookingData[currentSelectedNumber] = bookingInfo;
-                        
-                        // Refresh data from server
-                        await loadBookingsFromSheets();
-                        await refreshStatistics();
-                    } else {
-                        throw new Error(result.message || 'เกิดข้อผิดพลาดในการจอง');
-                    }
-                } else {
-                    // Save to localStorage (offline mode)
+                // Save to Google Sheets
+                const result = await saveBookingToSheets(bookingInfo);
+                
+                if (result.success) {
+                    // Update local data
                     bookingData[currentSelectedNumber] = bookingInfo;
-                    saveDataToLocalStorage();
-                    calculateLocalStatistics();
+                    
+                    // Refresh data from server
+                    await loadBookingsFromSheets();
+                    await refreshStatistics();
+                } else {
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการจอง');
                 }
                 
                 // Update UI
@@ -1064,10 +974,9 @@
                 closeModal();
                 
                 // Show success message
-                const modeText = isOnlineMode ? 'บันทึกลง Google Sheets แล้ว' : 'บันทึกในเครื่องแล้ว';
                 Swal.fire({
                     title: '✅ จองสำเร็จ!',
-                    text: `หมายเลข ${currentSelectedNumber} ได้รับการจองเรียบร้อยแล้ว (${modeText})`,
+                    text: `หมายเลข ${currentSelectedNumber} ได้รับการจองเรียบร้อยแล้ว`,
                     icon: 'success',
                     timer: 3000,
                     showConfirmButton: false
@@ -1076,57 +985,12 @@
             } catch (error) {
                 console.error('Error booking number:', error);
                 
-                // If online mode fails, try offline mode
-                if (isOnlineMode && error.message.includes('ระบบทำงานในโหมดออฟไลน์')) {
-                    try {
-                        // Fallback to offline mode
-                        const bookingInfo = {
-                            number: currentSelectedNumber,
-                            name: name,
-                            phone: phone,
-                            paymentStatus: paymentStatus,
-                            slipFile: slipFile ? slipFile.name : null,
-                            timestamp: new Date().toISOString()
-                        };
-                        
-                        bookingData[currentSelectedNumber] = bookingInfo;
-                        saveDataToLocalStorage();
-                        calculateLocalStatistics();
-                        
-                        // Update UI
-                        generateNumberGrid();
-                        updateStatistics();
-                        updateProgress();
-                        if (isAdminMode) {
-                            updateAdminTable();
-                        }
-                        
-                        closeModal();
-                        
-                        Swal.fire({
-                            title: '✅ จองสำเร็จ!',
-                            text: `หมายเลข ${currentSelectedNumber} บันทึกในเครื่องแล้ว (โหมดออฟไลน์)`,
-                            icon: 'success',
-                            timer: 3000,
-                            showConfirmButton: false
-                        });
-                        
-                    } catch (offlineError) {
-                        Swal.fire({
-                            title: 'เกิดข้อผิดพลาด!',
-                            text: 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
-                            icon: 'error',
-                            confirmButtonText: 'ตกลง'
-                        });
-                    }
-                } else {
-                    Swal.fire({
-                        title: 'เกิดข้อผิดพลาด!',
-                        text: error.message || 'ไม่สามารถจองหมายเลขได้ กรุณาลองใหม่อีกครั้ง',
-                        icon: 'error',
-                        confirmButtonText: 'ตกลง'
-                    });
-                }
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: error.message || 'ไม่สามารถจองหมายเลขได้ กรุณาลองใหม่อีกครั้ง',
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง'
+                });
             }
         });
 
@@ -1280,31 +1144,21 @@
                         }
                     });
 
-                    if (isOnlineMode) {
-                        // Update in Google Sheets
-                        const updateResult = await updateBookingInSheets(number, result.value);
-                        
-                        if (updateResult.success) {
-                            // Update local data
-                            bookingData[number] = {
-                                ...booking,
-                                ...result.value
-                            };
-                            
-                            // Refresh data from server
-                            await loadBookingsFromSheets();
-                            await refreshStatistics();
-                        } else {
-                            throw new Error(updateResult.message || 'เกิดข้อผิดพลาดในการอัปเดต');
-                        }
-                    } else {
-                        // Update in localStorage (offline mode)
+                    // Update in Google Sheets
+                    const updateResult = await updateBookingInSheets(number, result.value);
+                    
+                    if (updateResult.success) {
+                        // Update local data
                         bookingData[number] = {
                             ...booking,
                             ...result.value
                         };
-                        saveDataToLocalStorage();
-                        calculateLocalStatistics();
+                        
+                        // Refresh data from server
+                        await loadBookingsFromSheets();
+                        await refreshStatistics();
+                    } else {
+                        throw new Error(updateResult.message || 'เกิดข้อผิดพลาดในการอัปเดต');
                     }
                     
                     // Update UI
@@ -1313,42 +1167,16 @@
                     updateProgress();
                     updateAdminTable();
                     
-                    const modeText = isOnlineMode ? 'อัปเดตใน Google Sheets แล้ว' : 'อัปเดตในเครื่องแล้ว';
-                    Swal.fire('✅ บันทึกสำเร็จ!', modeText, 'success');
+                    Swal.fire('✅ บันทึกสำเร็จ!', 'อัปเดตข้อมูลเรียบร้อยแล้ว', 'success');
                     
                 } catch (error) {
                     console.error('Error updating booking:', error);
                     
-                    // Fallback to offline mode if online fails
-                    if (isOnlineMode) {
-                        try {
-                            bookingData[number] = {
-                                ...booking,
-                                ...result.value
-                            };
-                            saveDataToLocalStorage();
-                            calculateLocalStatistics();
-                            
-                            generateNumberGrid();
-                            updateStatistics();
-                            updateProgress();
-                            updateAdminTable();
-                            
-                            Swal.fire('✅ บันทึกสำเร็จ!', 'อัปเดตในเครื่องแล้ว (โหมดออฟไลน์)', 'success');
-                        } catch (offlineError) {
-                            Swal.fire({
-                                title: 'เกิดข้อผิดพลาด!',
-                                text: 'ไม่สามารถอัปเดตข้อมูลได้',
-                                icon: 'error'
-                            });
-                        }
-                    } else {
-                        Swal.fire({
-                            title: 'เกิดข้อผิดพลาด!',
-                            text: error.message || 'ไม่สามารถอัปเดตข้อมูลได้',
-                            icon: 'error'
-                        });
-                    }
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: error.message || 'ไม่สามารถอัปเดตข้อมูลได้',
+                        icon: 'error'
+                    });
                 }
             }
         }
@@ -1376,25 +1204,18 @@
                         }
                     });
 
-                    if (isOnlineMode) {
-                        // Delete from Google Sheets
-                        const deleteResult = await deleteBookingFromSheets(number);
-                        
-                        if (deleteResult.success) {
-                            // Update local data
-                            delete bookingData[number];
-                            
-                            // Refresh data from server
-                            await loadBookingsFromSheets();
-                            await refreshStatistics();
-                        } else {
-                            throw new Error(deleteResult.message || 'เกิดข้อผิดพลาดในการลบ');
-                        }
-                    } else {
-                        // Delete from localStorage (offline mode)
+                    // Delete from Google Sheets
+                    const deleteResult = await deleteBookingFromSheets(number);
+                    
+                    if (deleteResult.success) {
+                        // Update local data
                         delete bookingData[number];
-                        saveDataToLocalStorage();
-                        calculateLocalStatistics();
+                        
+                        // Refresh data from server
+                        await loadBookingsFromSheets();
+                        await refreshStatistics();
+                    } else {
+                        throw new Error(deleteResult.message || 'เกิดข้อผิดพลาดในการลบ');
                     }
                     
                     // Update UI
@@ -1403,39 +1224,16 @@
                     updateProgress();
                     updateAdminTable();
                     
-                    const modeText = isOnlineMode ? 'ลบจาก Google Sheets แล้ว' : 'ลบจากเครื่องแล้ว';
-                    Swal.fire('✅ ลบสำเร็จ!', modeText, 'success');
+                    Swal.fire('✅ ลบสำเร็จ!', 'ลบข้อมูลเรียบร้อยแล้ว', 'success');
                     
                 } catch (error) {
                     console.error('Error deleting booking:', error);
                     
-                    // Fallback to offline mode if online fails
-                    if (isOnlineMode) {
-                        try {
-                            delete bookingData[number];
-                            saveDataToLocalStorage();
-                            calculateLocalStatistics();
-                            
-                            generateNumberGrid();
-                            updateStatistics();
-                            updateProgress();
-                            updateAdminTable();
-                            
-                            Swal.fire('✅ ลบสำเร็จ!', 'ลบจากเครื่องแล้ว (โหมดออฟไลน์)', 'success');
-                        } catch (offlineError) {
-                            Swal.fire({
-                                title: 'เกิดข้อผิดพลาด!',
-                                text: 'ไม่สามารถลบข้อมูลได้',
-                                icon: 'error'
-                            });
-                        }
-                    } else {
-                        Swal.fire({
-                            title: 'เกิดข้อผิดพลาด!',
-                            text: error.message || 'ไม่สามารถลบข้อมูลได้',
-                            icon: 'error'
-                        });
-                    }
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: error.message || 'ไม่สามารถลบข้อมูลได้',
+                        icon: 'error'
+                    });
                 }
             }
         }
@@ -1469,45 +1267,17 @@
 
                     const newWinningNumber = result.value.padStart(2, '0');
                     
-                    if (isOnlineMode) {
-                        // Announce winner to Google Sheets
-                        const announceResult = await announceWinnerToSheets(newWinningNumber);
-                        
-                        if (announceResult.success) {
-                            // Update local data
-                            winningNumber = newWinningNumber;
-                            showWinnerAnnouncement();
-                            
-                            // Check if there's a winner
-                            if (announceResult.winner) {
-                                const winner = announceResult.winner;
-                                Swal.fire({
-                                    title: '🎉 มีผู้ถูกรางวัล!',
-                                    html: `
-                                        <div style="text-align: center;">
-                                            <h3>เลขท้ายสองตัว: ${newWinningNumber}</h3>
-                                            <p><strong>ผู้ถูกรางวัล:</strong> ${winner.name}</p>
-                                            <p><strong>เบอร์โทร:</strong> ${winner.phone}</p>
-                                        </div>
-                                    `,
-                                    icon: 'success',
-                                    confirmButtonText: 'ตกลง'
-                                });
-                            } else {
-                                Swal.fire('📢 ประกาศแล้ว!', `เลขท้ายสองตัว: ${newWinningNumber}\n(ไม่มีผู้จองหมายเลขนี้)`, 'info');
-                            }
-                        } else {
-                            throw new Error(announceResult.message || 'เกิดข้อผิดพลาดในการประกาศ');
-                        }
-                    } else {
-                        // Offline mode - just update local data
+                    // Announce winner to Google Sheets
+                    const announceResult = await announceWinnerToSheets(newWinningNumber);
+                    
+                    if (announceResult.success) {
+                        // Update local data
                         winningNumber = newWinningNumber;
-                        saveDataToLocalStorage();
                         showWinnerAnnouncement();
                         
-                        // Check if there's a winner locally
-                        const winner = bookingData[newWinningNumber];
-                        if (winner) {
+                        // Check if there's a winner
+                        if (announceResult.winner) {
+                            const winner = announceResult.winner;
                             Swal.fire({
                                 title: '🎉 มีผู้ถูกรางวัล!',
                                 html: `
@@ -1515,60 +1285,26 @@
                                         <h3>เลขท้ายสองตัว: ${newWinningNumber}</h3>
                                         <p><strong>ผู้ถูกรางวัล:</strong> ${winner.name}</p>
                                         <p><strong>เบอร์โทร:</strong> ${winner.phone}</p>
-                                        <p><small>(โหมดออฟไลน์)</small></p>
                                     </div>
                                 `,
                                 icon: 'success',
                                 confirmButtonText: 'ตกลง'
                             });
                         } else {
-                            Swal.fire('📢 ประกาศแล้ว!', `เลขท้ายสองตัว: ${newWinningNumber}\n(ไม่มีผู้จองหมายเลขนี้)\n(โหมดออฟไลน์)`, 'info');
+                            Swal.fire('📢 ประกาศแล้ว!', `เลขท้ายสองตัว: ${newWinningNumber}\n(ไม่มีผู้จองหมายเลขนี้)`, 'info');
                         }
+                    } else {
+                        throw new Error(announceResult.message || 'เกิดข้อผิดพลาดในการประกาศ');
                     }
                     
                 } catch (error) {
                     console.error('Error announcing winner:', error);
                     
-                    // Fallback to offline mode
-                    if (isOnlineMode) {
-                        try {
-                            const newWinningNumber = result.value.padStart(2, '0');
-                            winningNumber = newWinningNumber;
-                            saveDataToLocalStorage();
-                            showWinnerAnnouncement();
-                            
-                            const winner = bookingData[newWinningNumber];
-                            if (winner) {
-                                Swal.fire({
-                                    title: '🎉 มีผู้ถูกรางวัล!',
-                                    html: `
-                                        <div style="text-align: center;">
-                                            <h3>เลขท้ายสองตัว: ${newWinningNumber}</h3>
-                                            <p><strong>ผู้ถูกรางวัล:</strong> ${winner.name}</p>
-                                            <p><strong>เบอร์โทร:</strong> ${winner.phone}</p>
-                                            <p><small>(บันทึกในเครื่อง - โหมดออฟไลน์)</small></p>
-                                        </div>
-                                    `,
-                                    icon: 'success',
-                                    confirmButtonText: 'ตกลง'
-                                });
-                            } else {
-                                Swal.fire('📢 ประกาศแล้ว!', `เลขท้ายสองตัว: ${newWinningNumber}\n(บันทึกในเครื่อง - โหมดออฟไลน์)`, 'info');
-                            }
-                        } catch (offlineError) {
-                            Swal.fire({
-                                title: 'เกิดข้อผิดพลาด!',
-                                text: 'ไม่สามารถประกาศผลรางวัลได้',
-                                icon: 'error'
-                            });
-                        }
-                    } else {
-                        Swal.fire({
-                            title: 'เกิดข้อผิดพลาด!',
-                            text: error.message || 'ไม่สามารถประกาศผลรางวัลได้',
-                            icon: 'error'
-                        });
-                    }
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: error.message || 'ไม่สามารถประกาศผลรางวัลได้',
+                        icon: 'error'
+                    });
                 }
             }
         }
@@ -1803,17 +1539,12 @@
                     }
                 });
 
-                if (isOnlineMode) {
-                    // Load all data from Google Sheets
-                    await Promise.all([
-                        loadBookingsFromSheets(),
-                        loadStatisticsFromSheets(),
-                        loadWinningNumberFromSheets()
-                    ]);
-                } else {
-                    // Refresh local data
-                    calculateLocalStatistics();
-                }
+                // Load all data from Google Sheets
+                await Promise.all([
+                    loadBookingsFromSheets(),
+                    loadStatisticsFromSheets(),
+                    loadWinningNumberFromSheets()
+                ]);
 
                 // Update UI
                 generateNumberGrid();
@@ -1932,5 +1663,5 @@
             }
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d1895737ba91b4',t:'MTc1NDg1MDMzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d1a496778ffd24',t:'MTc1NDg1MTQ0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
