@@ -489,7 +489,8 @@
             <div class="admin-controls">
                 <button class="control-btn" onclick="announceWinner()">📢 ประกาศผลรางวัล</button>
                 <button class="control-btn" onclick="generateReport()">📊 สร้างรายงาน</button>
-                <button class="control-btn" onclick="resetSystem()">🔄 รีเซ็ตระบบ</button>
+                <button class="control-btn" onclick="refreshAllData()">🔄 รีเฟรชข้อมูล</button>
+                <button class="control-btn" onclick="resetSystem()">⚠️ รีเซ็ตระบบ</button>
                 <button class="control-btn" onclick="exportData()">💾 ส่งออกข้อมูล</button>
             </div>
 
@@ -566,29 +567,191 @@
 
     <script>
         // Global variables
-        let bookingData = JSON.parse(localStorage.getItem('lotteryBookings') || '{}');
+        let bookingData = {};
         let isAdminMode = false;
-        let winningNumber = localStorage.getItem('winningNumber') || '';
+        let winningNumber = '';
         let currentSelectedNumber = '';
+        let statisticsData = {};
+        
+        // Google Apps Script Web App URL - ใส่ URL ของ Web App ที่ Deploy แล้ว
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMh6BI1JLi5mncSW70d21A5_whkZBlfnAmd8oMs8xGaEZ4rCJh0Xl3en7l4Y_ax-wu/exec';
 
         // Initialize the system
         document.addEventListener('DOMContentLoaded', function() {
-            generateNumberGrid();
-            updateStatistics();
-            updateProgress();
-            showWinnerAnnouncement();
-            
-            // Show welcome notification
-            Swal.fire({
-                title: '🎯 ยินดีต้อนรับ!',
-                text: 'ระบบออกเลขท้ายสองตัว ฉลากกินแบ่งรัฐบาล',
-                icon: 'success',
-                timer: 3000,
-                showConfirmButton: false,
-                toast: true,
-                position: 'top-end'
-            });
+            initializeSystem();
         });
+
+        // Initialize system with data from Google Sheets
+        async function initializeSystem() {
+            try {
+                // Show loading
+                Swal.fire({
+                    title: 'กำลังโหลดข้อมูล...',
+                    text: 'กรุณารอสักครู่',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Load data from Google Sheets
+                await loadBookingsFromSheets();
+                await loadStatisticsFromSheets();
+                await loadWinningNumberFromSheets();
+
+                // Update UI
+                generateNumberGrid();
+                updateStatistics();
+                updateProgress();
+                showWinnerAnnouncement();
+
+                // Close loading and show welcome
+                Swal.close();
+                
+                Swal.fire({
+                    title: '🎯 ยินดีต้อนรับ!',
+                    text: 'ระบบออกเลขท้ายสองตัว ฉลากกินแบ่งรัฐบาล',
+                    icon: 'success',
+                    timer: 3000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+
+            } catch (error) {
+                console.error('Error initializing system:', error);
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
+                    icon: 'error',
+                    confirmButtonText: 'ลองใหม่',
+                    allowOutsideClick: false
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        }
+
+        // API Functions for Google Sheets Integration
+        async function callGoogleScript(action, data = {}) {
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        ...data
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return result;
+
+            } catch (error) {
+                console.error('Error calling Google Script:', error);
+                throw error;
+            }
+        }
+
+        // Load bookings from Google Sheets
+        async function loadBookingsFromSheets() {
+            try {
+                const result = await callGoogleScript('getBookings');
+                if (result.success) {
+                    bookingData = result.data || {};
+                } else {
+                    throw new Error(result.message || 'Failed to load bookings');
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                throw error;
+            }
+        }
+
+        // Load statistics from Google Sheets
+        async function loadStatisticsFromSheets() {
+            try {
+                const result = await callGoogleScript('getStatistics');
+                if (result.success) {
+                    statisticsData = result.data || {};
+                } else {
+                    throw new Error(result.message || 'Failed to load statistics');
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                throw error;
+            }
+        }
+
+        // Load winning number from Google Sheets
+        async function loadWinningNumberFromSheets() {
+            try {
+                const result = await callGoogleScript('getSetting', { key: 'WINNING_NUMBER' });
+                if (result.success) {
+                    winningNumber = result.data || '';
+                } else {
+                    winningNumber = '';
+                }
+            } catch (error) {
+                console.error('Error loading winning number:', error);
+                winningNumber = '';
+            }
+        }
+
+        // Save booking to Google Sheets
+        async function saveBookingToSheets(bookingInfo) {
+            try {
+                const result = await callGoogleScript('bookNumber', bookingInfo);
+                return result;
+            } catch (error) {
+                console.error('Error saving booking:', error);
+                throw error;
+            }
+        }
+
+        // Update booking in Google Sheets
+        async function updateBookingInSheets(number, bookingInfo) {
+            try {
+                const result = await callGoogleScript('updateBooking', {
+                    number: number,
+                    ...bookingInfo
+                });
+                return result;
+            } catch (error) {
+                console.error('Error updating booking:', error);
+                throw error;
+            }
+        }
+
+        // Delete booking from Google Sheets
+        async function deleteBookingFromSheets(number) {
+            try {
+                const result = await callGoogleScript('deleteBooking', { number: number });
+                return result;
+            } catch (error) {
+                console.error('Error deleting booking:', error);
+                throw error;
+            }
+        }
+
+        // Announce winner to Google Sheets
+        async function announceWinnerToSheets(winningNumber) {
+            try {
+                const result = await callGoogleScript('announceWinner', { 
+                    winningNumber: winningNumber 
+                });
+                return result;
+            } catch (error) {
+                console.error('Error announcing winner:', error);
+                throw error;
+            }
+        }
 
         // Generate number grid (00-99)
         function generateNumberGrid() {
@@ -657,7 +820,7 @@
         }
 
         // Handle booking form submission
-        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const name = document.getElementById('customerName').value;
@@ -668,48 +831,69 @@
             // Show loading
             Swal.fire({
                 title: 'กำลังบันทึกข้อมูล...',
+                text: 'กรุณารอสักครู่',
                 allowOutsideClick: false,
                 didOpen: () => {
                     Swal.showLoading();
                 }
             });
             
-            // Simulate processing time
-            setTimeout(() => {
-                // Save booking data
-                bookingData[currentSelectedNumber] = {
+            try {
+                // Prepare booking data
+                const bookingInfo = {
+                    number: currentSelectedNumber,
                     name: name,
                     phone: phone,
                     paymentStatus: paymentStatus,
-                    slipFile: slipFile ? slipFile.name : null,
-                    timestamp: new Date().toISOString()
+                    slipFile: slipFile ? slipFile.name : null
                 };
                 
-                // Save to localStorage
-                localStorage.setItem('lotteryBookings', JSON.stringify(bookingData));
+                // Save to Google Sheets
+                const result = await saveBookingToSheets(bookingInfo);
                 
-                // Update UI
-                generateNumberGrid();
-                updateStatistics();
-                updateProgress();
-                updateAdminTable();
+                if (result.success) {
+                    // Update local data
+                    bookingData[currentSelectedNumber] = {
+                        name: name,
+                        phone: phone,
+                        paymentStatus: paymentStatus,
+                        slipFile: slipFile ? slipFile.name : null,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    // Refresh data from server
+                    await loadBookingsFromSheets();
+                    await refreshStatistics();
+                    
+                    // Update UI
+                    generateNumberGrid();
+                    updateAdminTable();
+                    
+                    // Close modal
+                    closeModal();
+                    
+                    // Show success message
+                    Swal.fire({
+                        title: '✅ จองสำเร็จ!',
+                        text: `หมายเลข ${currentSelectedNumber} ได้รับการจองเรียบร้อยแล้ว`,
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                    
+                } else {
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการจอง');
+                }
                 
-                // Close modal
-                closeModal();
-                
-                // Show success message
+            } catch (error) {
+                console.error('Error booking number:', error);
                 Swal.fire({
-                    title: '✅ จองสำเร็จ!',
-                    text: `หมายเลข ${currentSelectedNumber} ได้รับการจองเรียบร้อยแล้ว`,
-                    icon: 'success',
-                    timer: 3000,
-                    showConfirmButton: false
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: error.message || 'ไม่สามารถจองหมายเลขได้ กรุณาลองใหม่อีกครั้ง',
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง'
                 });
-                
-                // Send LINE notification (mock)
-                sendLineNotification(`🎯 มีการจองหมายเลขใหม่!\nเลข: ${currentSelectedNumber}\nชื่อ: ${name}\nเบอร์: ${phone}\nสถานะ: ${paymentStatus === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}`);
-                
-            }, 1500);
+            }
         });
 
         // Handle file upload
@@ -722,16 +906,35 @@
 
         // Update statistics
         function updateStatistics() {
-            const bookings = Object.values(bookingData);
-            const totalSelected = bookings.length;
-            const totalPaid = bookings.filter(b => b.paymentStatus === 'paid').length;
-            const totalPending = bookings.filter(b => b.paymentStatus === 'pending').length;
-            const totalAmount = totalPaid * 100; // Assuming 100 baht per number
+            // Use cached statistics data if available, otherwise calculate from bookingData
+            let stats;
+            if (statisticsData && Object.keys(statisticsData).length > 0) {
+                stats = statisticsData;
+            } else {
+                const bookings = Object.values(bookingData);
+                stats = {
+                    totalSelected: bookings.length,
+                    totalPaid: bookings.filter(b => b.paymentStatus === 'paid').length,
+                    totalPending: bookings.filter(b => b.paymentStatus === 'pending').length,
+                    totalAmount: bookings.filter(b => b.paymentStatus === 'paid').length * 80
+                };
+            }
             
-            document.getElementById('totalSelected').textContent = totalSelected;
-            document.getElementById('totalPaid').textContent = totalPaid;
-            document.getElementById('totalAmount').textContent = totalAmount.toLocaleString();
-            document.getElementById('totalPending').textContent = totalPending;
+            document.getElementById('totalSelected').textContent = stats.totalSelected || 0;
+            document.getElementById('totalPaid').textContent = stats.totalPaid || 0;
+            document.getElementById('totalAmount').textContent = (stats.totalAmount || 0).toLocaleString();
+            document.getElementById('totalPending').textContent = stats.totalPending || 0;
+        }
+
+        // Refresh statistics from Google Sheets
+        async function refreshStatistics() {
+            try {
+                await loadStatisticsFromSheets();
+                updateStatistics();
+                updateProgress();
+            } catch (error) {
+                console.error('Error refreshing statistics:', error);
+            }
         }
 
         // Update progress bar
@@ -802,10 +1005,10 @@
         }
 
         // Edit booking
-        function editBooking(number) {
+        async function editBooking(number) {
             const booking = bookingData[number];
             
-            Swal.fire({
+            const result = await Swal.fire({
                 title: `แก้ไขการจอง หมายเลข ${number}`,
                 html: `
                     <div style="text-align: left;">
@@ -830,26 +1033,56 @@
                         paymentStatus: document.getElementById('editStatus').value
                     };
                 }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    bookingData[number] = {
-                        ...booking,
-                        ...result.value
-                    };
-                    
-                    localStorage.setItem('lotteryBookings', JSON.stringify(bookingData));
-                    generateNumberGrid();
-                    updateStatistics();
-                    updateAdminTable();
-                    
-                    Swal.fire('✅ บันทึกสำเร็จ!', '', 'success');
-                }
             });
+
+            if (result.isConfirmed) {
+                try {
+                    // Show loading
+                    Swal.fire({
+                        title: 'กำลังอัปเดต...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Update in Google Sheets
+                    const updateResult = await updateBookingInSheets(number, result.value);
+                    
+                    if (updateResult.success) {
+                        // Update local data
+                        bookingData[number] = {
+                            ...booking,
+                            ...result.value
+                        };
+                        
+                        // Refresh data from server
+                        await loadBookingsFromSheets();
+                        await refreshStatistics();
+                        
+                        // Update UI
+                        generateNumberGrid();
+                        updateAdminTable();
+                        
+                        Swal.fire('✅ บันทึกสำเร็จ!', '', 'success');
+                    } else {
+                        throw new Error(updateResult.message || 'เกิดข้อผิดพลาดในการอัปเดต');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error updating booking:', error);
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: error.message || 'ไม่สามารถอัปเดตข้อมูลได้',
+                        icon: 'error'
+                    });
+                }
+            }
         }
 
         // Delete booking
-        function deleteBooking(number) {
-            Swal.fire({
+        async function deleteBooking(number) {
+            const result = await Swal.fire({
                 title: 'ยืนยันการลบ?',
                 text: `คุณต้องการลบการจอง หมายเลข ${number} หรือไม่?`,
                 icon: 'warning',
@@ -857,24 +1090,54 @@
                 confirmButtonText: 'ลบ',
                 cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#ef5350'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    delete bookingData[number];
-                    localStorage.setItem('lotteryBookings', JSON.stringify(bookingData));
-                    
-                    generateNumberGrid();
-                    updateStatistics();
-                    updateProgress();
-                    updateAdminTable();
-                    
-                    Swal.fire('✅ ลบสำเร็จ!', '', 'success');
-                }
             });
+
+            if (result.isConfirmed) {
+                try {
+                    // Show loading
+                    Swal.fire({
+                        title: 'กำลังลบข้อมูล...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Delete from Google Sheets
+                    const deleteResult = await deleteBookingFromSheets(number);
+                    
+                    if (deleteResult.success) {
+                        // Update local data
+                        delete bookingData[number];
+                        
+                        // Refresh data from server
+                        await loadBookingsFromSheets();
+                        await refreshStatistics();
+                        
+                        // Update UI
+                        generateNumberGrid();
+                        updateProgress();
+                        updateAdminTable();
+                        
+                        Swal.fire('✅ ลบสำเร็จ!', '', 'success');
+                    } else {
+                        throw new Error(deleteResult.message || 'เกิดข้อผิดพลาดในการลบ');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error deleting booking:', error);
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: error.message || 'ไม่สามารถลบข้อมูลได้',
+                        icon: 'error'
+                    });
+                }
+            }
         }
 
         // Announce winner
-        function announceWinner() {
-            Swal.fire({
+        async function announceWinner() {
+            const result = await Swal.fire({
                 title: '📢 ประกาศผลรางวัล',
                 input: 'text',
                 inputPlaceholder: 'ใส่เลขท้ายสองตัวที่ถูกรางวัล (00-99)',
@@ -886,34 +1149,60 @@
                         return 'กรุณาใส่เลขสองหลักที่ถูกต้อง!';
                     }
                 }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    winningNumber = result.value;
-                    localStorage.setItem('winningNumber', winningNumber);
-                    showWinnerAnnouncement();
-                    
-                    // Check if there's a winner
-                    if (bookingData[winningNumber]) {
-                        const winner = bookingData[winningNumber];
-                        Swal.fire({
-                            title: '🎉 มีผู้ถูกรางวัล!',
-                            html: `
-                                <div style="text-align: center;">
-                                    <h3>เลขท้ายสองตัว: ${winningNumber}</h3>
-                                    <p><strong>ผู้ถูกรางวัล:</strong> ${winner.name}</p>
-                                    <p><strong>เบอร์โทร:</strong> ${winner.phone}</p>
-                                </div>
-                            `,
-                            icon: 'success',
-                            confirmButtonText: 'ส่งแจ้งเตือน'
-                        }).then(() => {
-                            sendLineNotification(`🎉 ประกาศผลรางวัล!\nเลขท้ายสองตัว: ${winningNumber}\nผู้ถูกรางวัล: ${winner.name}\nเบอร์โทร: ${winner.phone}`);
-                        });
-                    } else {
-                        Swal.fire('📢 ประกาศแล้ว!', `เลขท้ายสองตัว: ${winningNumber}\n(ไม่มีผู้จองหมายเลขนี้)`, 'info');
-                    }
-                }
             });
+
+            if (result.isConfirmed) {
+                try {
+                    // Show loading
+                    Swal.fire({
+                        title: 'กำลังประกาศผลรางวัล...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const newWinningNumber = result.value.padStart(2, '0');
+                    
+                    // Announce winner to Google Sheets
+                    const announceResult = await announceWinnerToSheets(newWinningNumber);
+                    
+                    if (announceResult.success) {
+                        // Update local data
+                        winningNumber = newWinningNumber;
+                        showWinnerAnnouncement();
+                        
+                        // Check if there's a winner
+                        if (announceResult.winner) {
+                            const winner = announceResult.winner;
+                            Swal.fire({
+                                title: '🎉 มีผู้ถูกรางวัล!',
+                                html: `
+                                    <div style="text-align: center;">
+                                        <h3>เลขท้ายสองตัว: ${newWinningNumber}</h3>
+                                        <p><strong>ผู้ถูกรางวัล:</strong> ${winner.name}</p>
+                                        <p><strong>เบอร์โทร:</strong> ${winner.phone}</p>
+                                    </div>
+                                `,
+                                icon: 'success',
+                                confirmButtonText: 'ตกลง'
+                            });
+                        } else {
+                            Swal.fire('📢 ประกาศแล้ว!', `เลขท้ายสองตัว: ${newWinningNumber}\n(ไม่มีผู้จองหมายเลขนี้)`, 'info');
+                        }
+                    } else {
+                        throw new Error(announceResult.message || 'เกิดข้อผิดพลาดในการประกาศ');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error announcing winner:', error);
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: error.message || 'ไม่สามารถประกาศผลรางวัลได้',
+                        icon: 'error'
+                    });
+                }
+            }
         }
 
         // Show winner announcement
@@ -925,40 +1214,103 @@
         }
 
         // Generate report
-        function generateReport() {
-            const bookings = Object.values(bookingData);
-            const totalSelected = bookings.length;
-            const totalPaid = bookings.filter(b => b.paymentStatus === 'paid').length;
-            const totalAmount = totalPaid * 80;
-            
-            const reportContent = `
-                <div style="text-align: left;">
-                    <h3>📊 รายงานสรุป</h3>
-                    <hr>
-                    <p><strong>จำนวนหมายเลขที่จองแล้ว:</strong> ${totalSelected}/100</p>
-                    <p><strong>จำนวนที่จ่ายเงินแล้ว:</strong> ${totalPaid}</p>
-                    <p><strong>จำนวนที่รอจ่ายเงิน:</strong> ${totalSelected - totalPaid}</p>
-                    <p><strong>รายรับรวม:</strong> ${totalAmount.toLocaleString()} บาท</p>
-                    <p><strong>วันที่สร้างรายงาน:</strong> ${new Date().toLocaleDateString('th-TH')}</p>
-                </div>
-            `;
-            
-            Swal.fire({
-                title: '📊 รายงานสรุป',
-                html: reportContent,
-                showCancelButton: true,
-                confirmButtonText: '🖨️ พิมพ์',
-                cancelButtonText: 'ปิด'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.print();
+        async function generateReport() {
+            try {
+                // Show loading
+                Swal.fire({
+                    title: 'กำลังสร้างรายงาน...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Generate report from Google Sheets
+                const reportResult = await callGoogleScript('generateReport');
+                
+                if (reportResult.success) {
+                    const data = reportResult.data;
+                    
+                    const reportContent = `
+                        <div style="text-align: left;">
+                            <h3>📊 รายงานสรุป</h3>
+                            <hr>
+                            <p><strong>งวดที่:</strong> ${data.currentRound || 'ไม่ระบุ'}</p>
+                            <p><strong>จำนวนหมายเลขที่จองแล้ว:</strong> ${data.totalSelected || 0}/100</p>
+                            <p><strong>จำนวนที่จ่ายเงินแล้ว:</strong> ${data.totalPaid || 0}</p>
+                            <p><strong>จำนวนที่รอจ่ายเงิน:</strong> ${data.totalPending || 0}</p>
+                            <p><strong>รายรับรวม:</strong> ${(data.totalAmount || 0).toLocaleString()} บาท</p>
+                            <p><strong>เลขที่ถูกรางวัล:</strong> ${data.winningNumber || 'ยังไม่ประกาศ'}</p>
+                            <p><strong>ผู้ถูกรางวัล:</strong> ${data.winner ? data.winner.name : 'ไม่มี'}</p>
+                            <p><strong>วันที่สร้างรายงาน:</strong> ${new Date().toLocaleDateString('th-TH')}</p>
+                        </div>
+                    `;
+                    
+                    Swal.fire({
+                        title: '📊 รายงานสรุป',
+                        html: reportContent,
+                        showCancelButton: true,
+                        confirmButtonText: '🖨️ พิมพ์',
+                        cancelButtonText: 'ปิด',
+                        width: '600px'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Create printable content
+                            const printContent = `
+                                <html>
+                                <head>
+                                    <title>รายงานสรุป - ระบบออกเลขท้ายสองตัว</title>
+                                    <style>
+                                        body { font-family: 'Sarabun', sans-serif; margin: 20px; }
+                                        h3 { color: #667eea; }
+                                        p { margin: 8px 0; }
+                                    </style>
+                                </head>
+                                <body>
+                                    ${reportContent}
+                                </body>
+                                </html>
+                            `;
+                            
+                            const printWindow = window.open('', '_blank');
+                            printWindow.document.write(printContent);
+                            printWindow.document.close();
+                            printWindow.print();
+                        }
+                    });
+                } else {
+                    throw new Error(reportResult.message || 'เกิดข้อผิดพลาดในการสร้างรายงาน');
                 }
-            });
+                
+            } catch (error) {
+                console.error('Error generating report:', error);
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: error.message || 'ไม่สามารถสร้างรายงานได้',
+                    icon: 'error'
+                });
+            }
         }
 
         // Reset system
-        function resetSystem() {
-            Swal.fire({
+        async function resetSystem() {
+            const passwordResult = await Swal.fire({
+                title: '🔐 ยืนยันตัวตน',
+                input: 'password',
+                inputPlaceholder: 'รหัสผ่าน Admin',
+                showCancelButton: true,
+                confirmButtonText: 'ยืนยัน',
+                cancelButtonText: 'ยกเลิก',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'กรุณาใส่รหัสผ่าน!';
+                    }
+                }
+            });
+
+            if (!passwordResult.isConfirmed) return;
+
+            const confirmResult = await Swal.fire({
                 title: '⚠️ ยืนยันการรีเซ็ต?',
                 text: 'การดำเนินการนี้จะลบข้อมูลทั้งหมด และไม่สามารถกู้คืนได้!',
                 icon: 'warning',
@@ -966,46 +1318,168 @@
                 confirmButtonText: 'รีเซ็ต',
                 cancelButtonText: 'ยกเลิก',
                 confirmButtonColor: '#ef5350'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    localStorage.clear();
-                    bookingData = {};
-                    winningNumber = '';
-                    
-                    generateNumberGrid();
-                    updateStatistics();
-                    updateProgress();
-                    updateAdminTable();
-                    document.getElementById('winnerAnnouncement').style.display = 'none';
-                    
-                    Swal.fire('✅ รีเซ็ตสำเร็จ!', 'ระบบได้รับการรีเซ็ตเรียบร้อยแล้ว', 'success');
-                }
             });
+
+            if (confirmResult.isConfirmed) {
+                try {
+                    // Show loading
+                    Swal.fire({
+                        title: 'กำลังรีเซ็ตระบบ...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Reset system in Google Sheets
+                    const resetResult = await callGoogleScript('resetSystem', {
+                        password: passwordResult.value
+                    });
+                    
+                    if (resetResult.success) {
+                        // Clear local data
+                        bookingData = {};
+                        winningNumber = '';
+                        statisticsData = {};
+                        
+                        // Update UI
+                        generateNumberGrid();
+                        updateStatistics();
+                        updateProgress();
+                        updateAdminTable();
+                        document.getElementById('winnerAnnouncement').style.display = 'none';
+                        
+                        Swal.fire('✅ รีเซ็ตสำเร็จ!', 'ระบบได้รับการรีเซ็ตเรียบร้อยแล้ว', 'success');
+                    } else {
+                        throw new Error(resetResult.message || 'เกิดข้อผิดพลาดในการรีเซ็ต');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error resetting system:', error);
+                    Swal.fire({
+                        title: 'เกิดข้อผิดพลาด!',
+                        text: error.message || 'ไม่สามารถรีเซ็ตระบบได้',
+                        icon: 'error'
+                    });
+                }
+            }
         }
 
         // Export data
-        function exportData() {
-            const data = {
-                bookings: bookingData,
-                winningNumber: winningNumber,
-                exportDate: new Date().toISOString()
-            };
-            
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            
-            // Create download link
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `lottery_data_${new Date().toISOString().split('T')[0]}.json`;
-            
-            // Trigger download
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            Swal.fire('✅ ส่งออกสำเร็จ!', 'ไฟล์ข้อมูลได้รับการดาวน์โหลดแล้ว', 'success');
+        async function exportData() {
+            try {
+                // Show loading
+                Swal.fire({
+                    title: 'กำลังเตรียมข้อมูล...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Get latest data from Google Sheets
+                await loadBookingsFromSheets();
+                await loadStatisticsFromSheets();
+
+                const data = {
+                    bookings: bookingData,
+                    statistics: statisticsData,
+                    winningNumber: winningNumber,
+                    exportDate: new Date().toISOString(),
+                    exportBy: 'Admin'
+                };
+                
+                const dataStr = JSON.stringify(data, null, 2);
+                
+                // Show data in a text area for copying (since download is restricted)
+                Swal.fire({
+                    title: '📋 ข้อมูลส่งออก',
+                    html: `
+                        <div style="text-align: left;">
+                            <p>คัดลอกข้อมูลด้านล่างเพื่อบันทึกเป็นไฟล์:</p>
+                            <textarea id="exportData" style="width: 100%; height: 300px; font-family: monospace; font-size: 12px;">${dataStr}</textarea>
+                            <button onclick="navigator.clipboard.writeText(document.getElementById('exportData').value).then(() => Swal.fire('✅ คัดลอกแล้ว!', '', 'success'))" 
+                                    style="margin-top: 10px; padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                                📋 คัดลอกข้อมูล
+                            </button>
+                        </div>
+                    `,
+                    width: '80%',
+                    showConfirmButton: true,
+                    confirmButtonText: 'ปิด'
+                });
+                
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: 'ไม่สามารถส่งออกข้อมูลได้',
+                    icon: 'error'
+                });
+            }
         }
+
+        // Refresh all data from Google Sheets
+        async function refreshAllData() {
+            try {
+                // Show loading
+                const loadingToast = Swal.fire({
+                    title: 'กำลังรีเฟรชข้อมูล...',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Load all data from Google Sheets
+                await Promise.all([
+                    loadBookingsFromSheets(),
+                    loadStatisticsFromSheets(),
+                    loadWinningNumberFromSheets()
+                ]);
+
+                // Update UI
+                generateNumberGrid();
+                updateStatistics();
+                updateProgress();
+                updateAdminTable();
+                showWinnerAnnouncement();
+
+                // Show success message
+                Swal.fire({
+                    title: '✅ รีเฟรชสำเร็จ!',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    icon: 'success'
+                });
+
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: 'ไม่สามารถรีเฟรชข้อมูลได้',
+                    icon: 'error',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 3000
+                });
+            }
+        }
+
+        // Auto refresh data every 30 seconds
+        setInterval(async () => {
+            try {
+                await refreshStatistics();
+            } catch (error) {
+                console.error('Auto refresh error:', error);
+            }
+        }, 30000);
 
         // Send LINE notification (mock function)
         function sendLineNotification(message) {
@@ -1045,5 +1519,5 @@
             }
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d12553d0bca1b5',t:'MTc1NDg0NjIzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d155695297aa81',t:'MTc1NDg0ODIwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
