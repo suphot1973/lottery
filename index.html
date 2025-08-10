@@ -575,7 +575,7 @@
         let isOnlineMode = false;
         
         // Google Apps Script Web App URL - ใส่ URL ของ Web App ที่ Deploy แล้ว
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMh6BI1JLi5mncSW70d21A5_whkZBlfnAmd8oMs8xGaEZ4rCJh0Xl3en7l4Y_ax-wu/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhtGZNC34KFlq42T-qHu-U70eT7lt2Onb2T37V9kfq3INkty9kGiAsrHTp6TG6oOgq/exec';
 
         // Initialize the system
         document.addEventListener('DOMContentLoaded', function() {
@@ -595,8 +595,14 @@
                     }
                 });
 
+                // Check if URL is properly configured
+                if (!SCRIPT_URL || SCRIPT_URL === 'YOUR_GOOGLE_SCRIPT_URL_HERE') {
+                    throw new Error('URL ของ Google Apps Script ยังไม่ได้ตั้งค่า');
+                }
+
                 // Try to connect to Google Sheets first
                 console.log('🔗 Attempting to connect to Google Sheets...');
+                console.log('📍 Script URL:', SCRIPT_URL);
 
                 try {
                     await testGoogleSheetsConnection();
@@ -610,8 +616,15 @@
                     console.log('✅ Connected to Google Sheets successfully');
                     
                 } catch (sheetsError) {
-                    console.warn('⚠️ Google Sheets connection failed, using localStorage:', sheetsError.message);
+                    console.warn('⚠️ Google Sheets connection failed:', sheetsError.message);
                     isOnlineMode = false;
+                    
+                    // Show detailed error information
+                    console.error('Connection Error Details:', {
+                        error: sheetsError.message,
+                        url: SCRIPT_URL,
+                        timestamp: new Date().toISOString()
+                    });
                     
                     // Fallback to localStorage
                     loadDataFromLocalStorage();
@@ -626,17 +639,37 @@
                 // Close loading and show welcome
                 Swal.close();
                 
-                const connectionStatus = isOnlineMode ? 'เชื่อมต่อ Google Sheets' : 'ใช้งานแบบออฟไลน์';
-                
-                Swal.fire({
-                    title: '🎯 ยินดีต้อนรับ!',
-                    text: `ระบบออกเลขท้ายสองตัว (${connectionStatus})`,
-                    icon: 'success',
-                    timer: 3000,
-                    showConfirmButton: false,
-                    toast: true,
-                    position: 'top-end'
-                });
+                if (isOnlineMode) {
+                    Swal.fire({
+                        title: '🎯 ยินดีต้อนรับ!',
+                        text: 'ระบบออกเลขท้ายสองตัว (เชื่อมต่อ Google Sheets)',
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: false,
+                        toast: true,
+                        position: 'top-end'
+                    });
+                } else {
+                    // Show detailed offline mode message
+                    Swal.fire({
+                        title: '⚠️ โหมดออฟไลน์',
+                        html: `
+                            <div style="text-align: left;">
+                                <p><strong>สาเหตุที่เป็นไปได้:</strong></p>
+                                <ul style="margin: 10px 0;">
+                                    <li>URL ของ Google Apps Script ไม่ถูกต้อง</li>
+                                    <li>Web App ยังไม่ได้ Deploy หรือไม่ได้ตั้งค่าสิทธิ์</li>
+                                    <li>Google Sheets ไม่ได้แชร์สิทธิ์</li>
+                                    <li>ปัญหาการเชื่อมต่ออินเทอร์เน็ต</li>
+                                </ul>
+                                <p><small>ระบบจะทำงานในโหมดออฟไลน์ ข้อมูลจะเก็บในเครื่องเท่านั้น</small></p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        confirmButtonText: 'เข้าใจแล้ว',
+                        width: '500px'
+                    });
+                }
 
             } catch (error) {
                 console.error('Error initializing system:', error);
@@ -653,13 +686,10 @@
                 Swal.close();
                 
                 Swal.fire({
-                    title: '⚠️ โหมดออฟไลน์',
-                    text: 'ระบบทำงานในโหมดออฟไลน์ ข้อมูลจะถูกเก็บในเครื่องเท่านั้น',
-                    icon: 'warning',
-                    timer: 4000,
-                    showConfirmButton: false,
-                    toast: true,
-                    position: 'top-end'
+                    title: '❌ เกิดข้อผิดพลาด',
+                    text: error.message || 'ไม่สามารถเริ่มต้นระบบได้',
+                    icon: 'error',
+                    confirmButtonText: 'ตกลง'
                 });
             }
         }
@@ -667,9 +697,11 @@
         // Test Google Sheets connection
         async function testGoogleSheetsConnection() {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
             try {
+                console.log('🔗 Testing connection to:', SCRIPT_URL);
+                
                 const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
                     headers: {
@@ -678,27 +710,49 @@
                     body: JSON.stringify({
                         action: 'test'
                     }),
-                    signal: controller.signal
+                    signal: controller.signal,
+                    mode: 'cors'
                 });
                 
                 clearTimeout(timeoutId);
                 
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response headers:', response.headers);
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                 }
                 
-                const result = await response.json();
+                const responseText = await response.text();
+                console.log('📡 Raw response:', responseText);
+                
+                let result;
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    throw new Error('Invalid JSON response from server');
+                }
+                
                 if (!result.success) {
                     throw new Error(result.message || 'Connection test failed');
                 }
                 
+                console.log('✅ Connection test successful:', result);
                 return result;
                 
             } catch (error) {
                 clearTimeout(timeoutId);
+                console.error('❌ Connection test failed:', error);
+                
                 if (error.name === 'AbortError') {
-                    throw new Error('Connection timeout');
+                    throw new Error('Connection timeout - ตรวจสอบ URL และสิทธิ์การเข้าถึง');
                 }
+                
+                if (error.message.includes('CORS')) {
+                    throw new Error('CORS error - ตรวจสอบการ Deploy Web App');
+                }
+                
                 throw error;
             }
         }
@@ -1878,5 +1932,5 @@
             }
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d17c617650447c',t:'MTc1NDg0OTgwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d1895737ba91b4',t:'MTc1NDg1MDMzMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
