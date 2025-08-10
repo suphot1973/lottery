@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบออกเลขท้ายสองตัว - ฉลากกินแบ่งรัฐบาล</title>
+    <link href="https://fonts.googleapis.com/css2?family=K2D:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'K2D', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .admin-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            background: white;
+            color: #ff6b6b;
+        }
+
+        .progress-container {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 15px;
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .number-card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .number-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .number-card.reserved {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            cursor: not-allowed;
+        }
+
+        .number-card.paid {
+            background: linear-gradient(135deg, #2ed573, #1e90ff);
+        }
+
+        .number-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .number-card:hover::before {
+            left: 100%;
+        }
+
+        .admin-panel {
+            display: none;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .admin-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+        }
+
+        .table-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 80px 150px 120px 100px 100px 120px;
+            gap: 15px;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            align-items: center;
+        }
+
+        .table-row:hover {
+            background: #f8f9fa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .edit-btn {
+            background: #ffa726;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #ef5350;
+            color: white;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .file-upload {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            background: #f8f9fa;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #2ed573, #1e90ff);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(46, 213, 115, 0.3);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .winner-announcement {
+            background: linear-gradient(135deg, #ffd700, #ffb347);
+            color: #333;
+            padding: 20px;
+            margin: 20px 30px;
+            border-radius: 15px;
+            text-align: center;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 768px) {
+            .numbers-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 10px;
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .admin-btn {
+                position: static;
+                margin-top: 15px;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .table-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="admin-btn" onclick="showAdminLogin()">🔐 Admin</button>
+            <h1>🎯 ระบบออกเลขท้ายสองตัว</h1>
+            <p>ฉลากกินแบ่งรัฐบาล - งวดประจำเดือน</p>
+        </div>
+
+        <!-- Winner Announcement -->
+        <div id="winnerAnnouncement" class="winner-announcement" style="display: none;">
+            🎉 ประกาศผลรางวัล: เลขท้ายสองตัว <span id="winningNumber"></span> 🎉
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-text" id="progressText">0% (0/100)</div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" id="totalSelected">0</div>
+                <div class="stat-label">หมายเลขที่เลือกแล้ว</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalPaid">0</div>
+                <div class="stat-label">จ่ายเงินแล้ว</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalAmount">0</div>
+                <div class="stat-label">รายรับรวม (บาท)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalPending">0</div>
+                <div class="stat-label">รอจ่ายเงิน</div>
+            </div>
+        </div>
+
+        <!-- Numbers Grid -->
+        <div class="numbers-grid" id="numbersGrid">
+            <!-- Numbers will be generated by JavaScript -->
+        </div>
+
+        <!-- Admin Panel -->
+        <div class="admin-panel" id="adminPanel">
+            <div class="admin-controls">
+                <button class="control-btn" onclick="announceWinner()">📢 ประกาศผลรางวัล</button>
+                <button class="control-btn" onclick="generateReport()">📊 สร้างรายงาน</button>
+                <button class="control-btn" onclick="resetSystem()">🔄 รีเซ็ตระบบ</button>
+                <button class="control-btn" onclick="exportData()">💾 ส่งออกข้อมูล</button>
+            </div>
+
+            <!-- Data Table -->
+            <div class="data-table">
+                <div class="table-header">
+                    📋 ข้อมูลการจองทั้งหมด
+                </div>
+                <div class="table-content">
+                    <div class="table-row" style="font-weight: 600; background: #f8f9fa;">
+                        <div>เลข</div>
+                        <div>ชื่อ</div>
+                        <div>เบอร์โทร</div>
+                        <div>สถานะ</div>
+                        <div>สลิป</div>
+                        <div>จัดการ</div>
+                    </div>
+                    <div id="dataTableContent">
+                        <!-- Data rows will be generated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <h2 style="text-align: center; margin-bottom: 25px; color: #667eea;">
+                📝 จองหมายเลข <span id="selectedNumber"></span>
+            </h2>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label class="form-label">👤 ชื่อ-นามสกุล</label>
+                    <input type="text" class="form-input" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">📞 เบอร์โทรศัพท์</label>
+                    <input type="tel" class="form-input" id="customerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">💰 สถานะการจ่ายเงิน</label>
+                    <select class="form-select" id="paymentStatus" required>
+                        <option value="">เลือกสถานะ</option>
+                        <option value="paid">จ่ายแล้ว</option>
+                        <option value="pending">รอจ่าย</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">💳 อัปโหลดสลิปโอนเงิน</label>
+                    <div class="file-upload" onclick="document.getElementById('slipFile').click()">
+                        <input type="file" id="slipFile" accept="image/*" style="display: none;" onchange="handleFileUpload(this)">
+                        <div id="fileUploadText">📎 คลิกเพื่อเลือกไฟล์สลิป</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; margin-top: 25px;">
+                    <button type="button" class="submit-btn" style="background: #6c757d;" onclick="closeModal()">ยกเลิก</button>
+                    <button type="submit" class="submit-btn">✅ ยืนยันการจอง</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal" id="infoModal">
+        <div class="modal-content">
+            <h2 style="text-align: center; margin-bottom: 25px; color: #ff6b6b;">
+                ℹ️ ข้อมูลการจอง
+            </h2>
+            <div id="infoContent"></div>
+            <button class="submit-btn" style="margin-top: 20px;" onclick="closeInfoModal()">ปิด</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let bookingData = JSON.parse(localStorage.getItem('lotteryBookings') || '{}');
+        let isAdminMode = false;
+        let winningNumber = localStorage.getItem('winningNumber') || '';
+        let currentSelectedNumber = '';
+
+        // Initialize the system
+        document.addEventListener('DOMContentLoaded', function() {
+            generateNumberGrid();
+            updateStatistics();
+            updateProgress();
+            showWinnerAnnouncement();
+            
+            // Show welcome notification
+            Swal.fire({
+                title: '🎯 ยินดีต้อนรับ!',
+                text: 'ระบบออกเลขท้ายสองตัว ฉลากกินแบ่งรัฐบาล',
+                icon: 'success',
+                timer: 3000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        });
+
+        // Generate number grid (00-99)
+        function generateNumberGrid() {
+            const grid = document.getElementById('numbersGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 100; i++) {
+                const number = i.toString().padStart(2, '0');
+                const button = document.createElement('button');
+                button.className = 'number-card';
+                button.textContent = number;
+                button.onclick = () => selectNumber(number);
+                
+                // Set status based on booking data
+                if (bookingData[number]) {
+                    if (bookingData[number].paymentStatus === 'paid') {
+                        button.classList.add('paid');
+                        button.title = `จองโดย: ${bookingData[number].name} (จ่ายแล้ว)`;
+                    } else {
+                        button.classList.add('reserved');
+                        button.title = `จองโดย: ${bookingData[number].name} (รอจ่าย)`;
+                    }
+                }
+                
+                grid.appendChild(button);
+            }
+        }
+
+        // Select number function
+        function selectNumber(number) {
+            if (bookingData[number]) {
+                showBookingInfo(number);
+                return;
+            }
+            
+            currentSelectedNumber = number;
+            document.getElementById('selectedNumber').textContent = number;
+            document.getElementById('bookingModal').style.display = 'flex';
+            
+            // Reset form
+            document.getElementById('bookingForm').reset();
+            document.getElementById('fileUploadText').textContent = '📎 คลิกเพื่อเลือกไฟล์สลิป';
+        }
+
+        // Show booking info for reserved numbers
+        function showBookingInfo(number) {
+            const booking = bookingData[number];
+            const content = `
+                <div style="text-align: center;">
+                    <h3 style="color: #ff6b6b; margin-bottom: 20px;">หมายเลข ${number} จองแล้ว!</h3>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; text-align: left;">
+                        <p><strong>👤 ชื่อ:</strong> ${booking.name}</p>
+                        <p><strong>📞 เบอร์โทร:</strong> ${booking.phone}</p>
+                        <p><strong>💰 สถานะ:</strong> 
+                            <span style="color: ${booking.paymentStatus === 'paid' ? '#2ed573' : '#ff6b6b'};">
+                                ${booking.paymentStatus === 'paid' ? '✅ จ่ายแล้ว' : '⏳ รอจ่าย'}
+                            </span>
+                        </p>
+                        <p><strong>📅 วันที่จอง:</strong> ${new Date(booking.timestamp).toLocaleDateString('th-TH')}</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('infoContent').innerHTML = content;
+            document.getElementById('infoModal').style.display = 'flex';
+        }
+
+        // Handle booking form submission
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('customerName').value;
+            const phone = document.getElementById('customerPhone').value;
+            const paymentStatus = document.getElementById('paymentStatus').value;
+            const slipFile = document.getElementById('slipFile').files[0];
+            
+            // Show loading
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Simulate processing time
+            setTimeout(() => {
+                // Save booking data
+                bookingData[currentSelectedNumber] = {
+                    name: name,
+                    phone: phone,
+                    paymentStatus: paymentStatus,
+                    slipFile: slipFile ? slipFile.name : null,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('lotteryBookings', JSON.stringify(bookingData));
+                
+                // Update UI
+                generateNumberGrid();
+                updateStatistics();
+                updateProgress();
+                updateAdminTable();
+                
+                // Close modal
+                closeModal();
+                
+                // Show success message
+                Swal.fire({
+                    title: '✅ จองสำเร็จ!',
+                    text: `หมายเลข ${currentSelectedNumber} ได้รับการจองเรียบร้อยแล้ว`,
+                    icon: 'success',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+                
+                // Send LINE notification (mock)
+                sendLineNotification(`🎯 มีการจองหมายเลขใหม่!\nเลข: ${currentSelectedNumber}\nชื่อ: ${name}\nเบอร์: ${phone}\nสถานะ: ${paymentStatus === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}`);
+                
+            }, 1500);
+        });
+
+        // Handle file upload
+        function handleFileUpload(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                document.getElementById('fileUploadText').textContent = `📎 ${file.name}`;
+            }
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const bookings = Object.values(bookingData);
+            const totalSelected = bookings.length;
+            const totalPaid = bookings.filter(b => b.paymentStatus === 'paid').length;
+            const totalPending = bookings.filter(b => b.paymentStatus === 'pending').length;
+            const totalAmount = totalPaid * 100; // Assuming 100 baht per number
+            
+            document.getElementById('totalSelected').textContent = totalSelected;
+            document.getElementById('totalPaid').textContent = totalPaid;
+            document.getElementById('totalAmount').textContent = totalAmount.toLocaleString();
+            document.getElementById('totalPending').textContent = totalPending;
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const totalSelected = Object.keys(bookingData).length;
+            const percentage = (totalSelected / 100) * 100;
+            
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${percentage.toFixed(1)}% (${totalSelected}/100)`;
+        }
+
+        // Admin functions
+        function showAdminLogin() {
+            Swal.fire({
+                title: '🔐 เข้าสู่ระบบ Admin',
+                input: 'password',
+                inputPlaceholder: 'รหัสผ่าน',
+                showCancelButton: true,
+                confirmButtonText: 'เข้าสู่ระบบ',
+                cancelButtonText: 'ยกเลิก',
+                inputValidator: (value) => {
+                    if (value !== 'admin1234') {
+                        return 'รหัสผ่านไม่ถูกต้อง!';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    isAdminMode = true;
+                    document.getElementById('adminPanel').style.display = 'block';
+                    updateAdminTable();
+                    
+                    Swal.fire({
+                        title: '✅ เข้าสู่ระบบสำเร็จ!',
+                        text: 'ยินดีต้อนรับ Admin',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            });
+        }
+
+        // Update admin table
+        function updateAdminTable() {
+            const tableContent = document.getElementById('dataTableContent');
+            tableContent.innerHTML = '';
+            
+            Object.entries(bookingData).forEach(([number, booking]) => {
+                const row = document.createElement('div');
+                row.className = 'table-row';
+                row.innerHTML = `
+                    <div>${number}</div>
+                    <div>${booking.name}</div>
+                    <div>${booking.phone}</div>
+                    <div>
+                        <span style="color: ${booking.paymentStatus === 'paid' ? '#2ed573' : '#ff6b6b'};">
+                            ${booking.paymentStatus === 'paid' ? '✅ จ่ายแล้ว' : '⏳ รอจ่าย'}
+                        </span>
+                    </div>
+                    <div>${booking.slipFile ? '📎 มีสลิป' : '❌ ไม่มี'}</div>
+                    <div class="action-buttons">
+                        <button class="action-btn edit-btn" onclick="editBooking('${number}')">✏️ แก้ไข</button>
+                        <button class="action-btn delete-btn" onclick="deleteBooking('${number}')">🗑️ ลบ</button>
+                    </div>
+                `;
+                tableContent.appendChild(row);
+            });
+        }
+
+        // Edit booking
+        function editBooking(number) {
+            const booking = bookingData[number];
+            
+            Swal.fire({
+                title: `แก้ไขการจอง หมายเลข ${number}`,
+                html: `
+                    <div style="text-align: left;">
+                        <label>ชื่อ:</label>
+                        <input id="editName" class="swal2-input" value="${booking.name}">
+                        <label>เบอร์โทร:</label>
+                        <input id="editPhone" class="swal2-input" value="${booking.phone}">
+                        <label>สถานะ:</label>
+                        <select id="editStatus" class="swal2-input">
+                            <option value="paid" ${booking.paymentStatus === 'paid' ? 'selected' : ''}>จ่ายแล้ว</option>
+                            <option value="pending" ${booking.paymentStatus === 'pending' ? 'selected' : ''}>รอจ่าย</option>
+                        </select>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'บันทึก',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => {
+                    return {
+                        name: document.getElementById('editName').value,
+                        phone: document.getElementById('editPhone').value,
+                        paymentStatus: document.getElementById('editStatus').value
+                    };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    bookingData[number] = {
+                        ...booking,
+                        ...result.value
+                    };
+                    
+                    localStorage.setItem('lotteryBookings', JSON.stringify(bookingData));
+                    generateNumberGrid();
+                    updateStatistics();
+                    updateAdminTable();
+                    
+                    Swal.fire('✅ บันทึกสำเร็จ!', '', 'success');
+                }
+            });
+        }
+
+        // Delete booking
+        function deleteBooking(number) {
+            Swal.fire({
+                title: 'ยืนยันการลบ?',
+                text: `คุณต้องการลบการจอง หมายเลข ${number} หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'ลบ',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#ef5350'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    delete bookingData[number];
+                    localStorage.setItem('lotteryBookings', JSON.stringify(bookingData));
+                    
+                    generateNumberGrid();
+                    updateStatistics();
+                    updateProgress();
+                    updateAdminTable();
+                    
+                    Swal.fire('✅ ลบสำเร็จ!', '', 'success');
+                }
+            });
+        }
+
+        // Announce winner
+        function announceWinner() {
+            Swal.fire({
+                title: '📢 ประกาศผลรางวัล',
+                input: 'text',
+                inputPlaceholder: 'ใส่เลขท้ายสองตัวที่ถูกรางวัล (00-99)',
+                showCancelButton: true,
+                confirmButtonText: 'ประกาศ',
+                cancelButtonText: 'ยกเลิก',
+                inputValidator: (value) => {
+                    if (!value || !/^\d{2}$/.test(value)) {
+                        return 'กรุณาใส่เลขสองหลักที่ถูกต้อง!';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    winningNumber = result.value;
+                    localStorage.setItem('winningNumber', winningNumber);
+                    showWinnerAnnouncement();
+                    
+                    // Check if there's a winner
+                    if (bookingData[winningNumber]) {
+                        const winner = bookingData[winningNumber];
+                        Swal.fire({
+                            title: '🎉 มีผู้ถูกรางวัล!',
+                            html: `
+                                <div style="text-align: center;">
+                                    <h3>เลขท้ายสองตัว: ${winningNumber}</h3>
+                                    <p><strong>ผู้ถูกรางวัล:</strong> ${winner.name}</p>
+                                    <p><strong>เบอร์โทร:</strong> ${winner.phone}</p>
+                                </div>
+                            `,
+                            icon: 'success',
+                            confirmButtonText: 'ส่งแจ้งเตือน'
+                        }).then(() => {
+                            sendLineNotification(`🎉 ประกาศผลรางวัล!\nเลขท้ายสองตัว: ${winningNumber}\nผู้ถูกรางวัล: ${winner.name}\nเบอร์โทร: ${winner.phone}`);
+                        });
+                    } else {
+                        Swal.fire('📢 ประกาศแล้ว!', `เลขท้ายสองตัว: ${winningNumber}\n(ไม่มีผู้จองหมายเลขนี้)`, 'info');
+                    }
+                }
+            });
+        }
+
+        // Show winner announcement
+        function showWinnerAnnouncement() {
+            if (winningNumber) {
+                document.getElementById('winningNumber').textContent = winningNumber;
+                document.getElementById('winnerAnnouncement').style.display = 'block';
+            }
+        }
+
+        // Generate report
+        function generateReport() {
+            const bookings = Object.values(bookingData);
+            const totalSelected = bookings.length;
+            const totalPaid = bookings.filter(b => b.paymentStatus === 'paid').length;
+            const totalAmount = totalPaid * 80;
+            
+            const reportContent = `
+                <div style="text-align: left;">
+                    <h3>📊 รายงานสรุป</h3>
+                    <hr>
+                    <p><strong>จำนวนหมายเลขที่จองแล้ว:</strong> ${totalSelected}/100</p>
+                    <p><strong>จำนวนที่จ่ายเงินแล้ว:</strong> ${totalPaid}</p>
+                    <p><strong>จำนวนที่รอจ่ายเงิน:</strong> ${totalSelected - totalPaid}</p>
+                    <p><strong>รายรับรวม:</strong> ${totalAmount.toLocaleString()} บาท</p>
+                    <p><strong>วันที่สร้างรายงาน:</strong> ${new Date().toLocaleDateString('th-TH')}</p>
+                </div>
+            `;
+            
+            Swal.fire({
+                title: '📊 รายงานสรุป',
+                html: reportContent,
+                showCancelButton: true,
+                confirmButtonText: '🖨️ พิมพ์',
+                cancelButtonText: 'ปิด'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.print();
+                }
+            });
+        }
+
+        // Reset system
+        function resetSystem() {
+            Swal.fire({
+                title: '⚠️ ยืนยันการรีเซ็ต?',
+                text: 'การดำเนินการนี้จะลบข้อมูลทั้งหมด และไม่สามารถกู้คืนได้!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'รีเซ็ต',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#ef5350'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.clear();
+                    bookingData = {};
+                    winningNumber = '';
+                    
+                    generateNumberGrid();
+                    updateStatistics();
+                    updateProgress();
+                    updateAdminTable();
+                    document.getElementById('winnerAnnouncement').style.display = 'none';
+                    
+                    Swal.fire('✅ รีเซ็ตสำเร็จ!', 'ระบบได้รับการรีเซ็ตเรียบร้อยแล้ว', 'success');
+                }
+            });
+        }
+
+        // Export data
+        function exportData() {
+            const data = {
+                bookings: bookingData,
+                winningNumber: winningNumber,
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `lottery_data_${new Date().toISOString().split('T')[0]}.json`;
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            Swal.fire('✅ ส่งออกสำเร็จ!', 'ไฟล์ข้อมูลได้รับการดาวน์โหลดแล้ว', 'success');
+        }
+
+        // Send LINE notification (mock function)
+        function sendLineNotification(message) {
+            // This is a mock function - in real implementation, you would integrate with LINE Messaging API
+            console.log('LINE Notification:', message);
+            
+            // Show notification in UI
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `📱 ส่งแจ้งเตือน LINE แล้ว<br><small>${message}</small>`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        // Modal functions
+        function closeModal() {
+            document.getElementById('bookingModal').style.display = 'none';
+        }
+
+        function closeInfoModal() {
+            document.getElementById('infoModal').style.display = 'none';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const bookingModal = document.getElementById('bookingModal');
+            const infoModal = document.getElementById('infoModal');
+            
+            if (event.target === bookingModal) {
+                closeModal();
+            }
+            if (event.target === infoModal) {
+                closeInfoModal();
+            }
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d12553d0bca1b5',t:'MTc1NDg0NjIzNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
