@@ -480,11 +480,18 @@
     <div class="container">
         <!-- Admin Panel -->
         <div class="admin-panel">
-            <button class="admin-btn" onclick="adminLogin()">🔐 เข้าสู่ระบบผู้ดูแล</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <button class="admin-btn" onclick="adminLogin()">🔐 เข้าสู่ระบบผู้ดูแล</button>
+                <div id="connectionStatus" style="padding: 8px 15px; border-radius: 20px; font-size: 14px; font-weight: 500;">
+                    <span id="statusIcon">💾</span>
+                    <span id="statusText">ใช้งานแบบออฟไลน์</span>
+                </div>
+            </div>
             <div id="adminControls" style="display: none; margin-top: 20px;">
                 <button class="btn btn-edit" onclick="manageNumbers()">จัดการหมายเลข</button>
                 <button class="btn btn-edit" onclick="announceWinner()">ประกาศผลรางวัล</button>
                 <button class="btn btn-edit" onclick="generateReport()">สร้างรายงาน</button>
+                <button class="btn btn-edit" onclick="toggleConnectionMode()">🔄 เปลี่ยนโหมด</button>
                 <button class="btn btn-delete" onclick="resetSystem()">รีเซ็ตระบบ</button>
             </div>
         </div>
@@ -604,18 +611,153 @@
 
     <script>
         // Global variables
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhtGZNC34KFlq42T-qHu-U70eT7lt2Onb2T37V9kfq3INkty9kGiAsrHTp6TG6oOgq/exec';
+        const SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'; // แทนที่ด้วย URL จริงของคุณ
         let bookingData = [];
         let isAdmin = false;
         let currentSelectedNumber = null;
+        let useLocalStorage = true; // ใช้ Local Storage แทนในขณะที่ยังไม่ได้เชื่อมต่อ
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             generateNumbersGrid();
             loadBookingData();
             setupEventListeners();
+            updateConnectionStatus();
             showWelcomeMessage();
         });
+
+        // อัปเดตสถานะการเชื่อมต่อ
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            const iconElement = document.getElementById('statusIcon');
+            const textElement = document.getElementById('statusText');
+            
+            if (useLocalStorage) {
+                statusElement.style.background = '#fff3cd';
+                statusElement.style.color = '#856404';
+                iconElement.textContent = '💾';
+                textElement.textContent = 'ใช้งานแบบออฟไลน์';
+            } else {
+                statusElement.style.background = '#d4edda';
+                statusElement.style.color = '#155724';
+                iconElement.textContent = '☁️';
+                textElement.textContent = 'เชื่อมต่อ Google Sheets';
+            }
+        }
+
+        // เปลี่ยนโหมดการเชื่อมต่อ
+        async function toggleConnectionMode() {
+            if (!isAdmin) return;
+            
+            const { value: mode } = await Swal.fire({
+                title: '🔄 เปลี่ยนโหมดการทำงาน',
+                html: `
+                    <div style="text-align: left; padding: 20px;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 10px 0; color: #2c3e50;">โหมดปัจจุบัน:</h4>
+                            <p style="margin: 0; color: ${useLocalStorage ? '#856404' : '#155724'}; font-weight: bold;">
+                                ${useLocalStorage ? '💾 ออฟไลน์ (Local Storage)' : '☁️ ออนไลน์ (Google Sheets)'}
+                            </p>
+                        </div>
+                        
+                        <h4 style="color: #2c3e50; margin-bottom: 15px;">เลือกโหมดใหม่:</h4>
+                        
+                        <div style="display: grid; gap: 10px;">
+                            <button class="swal2-styled" style="background: #f39c12;" onclick="Swal.clickConfirm()" data-mode="local">
+                                💾 โหมดออฟไลน์ (Local Storage)
+                            </button>
+                            <button class="swal2-styled" style="background: #27ae60;" onclick="Swal.clickConfirm()" data-mode="online">
+                                ☁️ โหมดออนไลน์ (Google Sheets)
+                            </button>
+                        </div>
+                        
+                        <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                            <p style="margin: 0; font-size: 14px; color: #0c5460;">
+                                💡 <strong>หมายเหตุ:</strong> โหมดออนไลน์ต้องตั้งค่า Google Apps Script URL ก่อน
+                            </p>
+                        </div>
+                    </div>
+                `,
+                showConfirmButton: false,
+                showCancelButton: true,
+                cancelButtonText: 'ยกเลิก',
+                width: '500px',
+                didOpen: () => {
+                    const buttons = document.querySelectorAll('[data-mode]');
+                    buttons.forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const mode = e.target.getAttribute('data-mode');
+                            Swal.close();
+                            switchConnectionMode(mode);
+                        });
+                    });
+                }
+            });
+        }
+
+        // เปลี่ยนโหมดการเชื่อมต่อ
+        async function switchConnectionMode(mode) {
+            if (mode === 'online' && SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                await Swal.fire({
+                    title: '⚠️ ไม่สามารถเปลี่ยนโหมดได้',
+                    text: 'กรุณาตั้งค่า Google Apps Script URL ก่อนใช้โหมดออนไลน์',
+                    icon: 'warning',
+                    confirmButtonColor: '#f39c12'
+                });
+                return;
+            }
+            
+            const oldMode = useLocalStorage;
+            useLocalStorage = (mode === 'local');
+            
+            try {
+                if (mode === 'online') {
+                    // ทดสอบการเชื่อมต่อ
+                    showLoading();
+                    const response = await fetch(`${SCRIPT_URL}?action=getBookings`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        await Swal.fire({
+                            title: 'เปลี่ยนโหมดสำเร็จ!',
+                            text: 'เปลี่ยนเป็นโหมดออนไลน์แล้ว',
+                            icon: 'success',
+                            confirmButtonColor: '#27ae60'
+                        });
+                        
+                        // โหลดข้อมูลจาก Google Sheets
+                        await loadBookingData();
+                    } else {
+                        throw new Error('Connection failed');
+                    }
+                } else {
+                    await Swal.fire({
+                        title: 'เปลี่ยนโหมดสำเร็จ!',
+                        text: 'เปลี่ยนเป็นโหมดออฟไลน์แล้ว',
+                        icon: 'success',
+                        confirmButtonColor: '#f39c12'
+                    });
+                }
+                
+                updateConnectionStatus();
+                
+            } catch (error) {
+                // เปลี่ยนกลับเป็นโหมดเดิม
+                useLocalStorage = oldMode;
+                
+                await Swal.fire({
+                    title: 'ไม่สามารถเชื่อมต่อได้',
+                    text: 'กลับไปใช้โหมดออฟไลน์แทน',
+                    icon: 'error',
+                    confirmButtonColor: '#e74c3c'
+                });
+                
+                updateConnectionStatus();
+            } finally {
+                hideLoading();
+            }
+        }
 
         // Generate numbers grid (00-99)
         function generateNumbersGrid() {
@@ -720,19 +862,42 @@
             };
 
             const fileInput = document.getElementById('slipFile');
-            let fileData = null;
+            let slipUrl = '';
 
             if (fileInput.files[0]) {
-                fileData = await convertFileToBase64(fileInput.files[0]);
+                // แปลงไฟล์เป็น base64 สำหรับเก็บใน Local Storage
+                const fileData = await convertFileToBase64(fileInput.files[0]);
+                slipUrl = `data:${fileData.type};base64,${fileData.data}`;
             }
 
             showLoading();
             
             try {
-                await submitBooking(formData, fileData);
+                if (useLocalStorage) {
+                    // บันทึกลง Local Storage
+                    const existingIndex = bookingData.findIndex(b => b.number === currentSelectedNumber);
+                    const newBooking = {
+                        ...formData,
+                        slipUrl: slipUrl
+                    };
+                    
+                    if (existingIndex >= 0) {
+                        // อัปเดตข้อมูลเดิม
+                        bookingData[existingIndex] = newBooking;
+                    } else {
+                        // เพิ่มข้อมูลใหม่
+                        bookingData.push(newBooking);
+                    }
+                    
+                    saveToLocalStorage();
+                } else {
+                    // ส่งไปยัง Google Apps Script
+                    await submitBooking(formData, fileInput.files[0] ? await convertFileToBase64(fileInput.files[0]) : null);
+                }
+                
                 closeModal('bookingModal');
                 resetBookingForm();
-                await loadBookingData();
+                updateUI();
                 
                 Swal.fire({
                     title: 'จองสำเร็จ!',
@@ -777,6 +942,7 @@
                 data: formData,
                 file: fileData
             };
+
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 headers: {
@@ -795,57 +961,68 @@
         // Load booking data
         async function loadBookingData() {
             try {
-                // For demo purposes, let's add some sample data with realistic slip images
-                bookingData = [
-                    {
-                        number: '01',
-                        name: 'สมชาย ใจดี',
-                        phone: '081-234-5678',
-                        status: 'paid',
-                        slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iIzI3YWU2MCIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhbmsgVHJhbnNmZXI8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QW1vdW50OiA4MCBCYXRoPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EYXRlOiAyMDI0LTEyLTI2PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZWY6IDEyMzQ1Njc4OTA8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5TVUNDRVNTPC90ZXh0Pgo8L3N2Zz4=',
-                        timestamp: new Date().toISOString()
-                    },
-                    {
-                        number: '23',
-                        name: 'สมหญิง รักดี',
-                        phone: '082-345-6789',
-                        status: 'pending',
-                        slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2YzOWMxMiIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhbmsgVHJhbnNmZXI8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QW1vdW50OiA4MCBCYXRoPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EYXRlOiAyMDI0LTEyLTI2PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZWY6IDk4NzY1NDMyMTA8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5QRU5ESU5HPC90ZXh0Pgo8L3N2Zz4=',
-                        timestamp: new Date().toISOString()
-                    },
-                    {
-                        number: '45',
-                        name: 'วิชัย สุขใส',
-                        phone: '083-456-7890',
-                        status: 'paid',
-                        slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iIzI3YWU2MCIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk1vYmlsZSBCYW5raW5nPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkFtb3VudDogODAgQmF0aDwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9IjEyMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RGF0ZTogMjAyNC0xMi0yNjwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9IjE2MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UmVmOiA1NTU2NjY3Nzc4PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMjAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+U1VDQ0VTUzwvdGV4dD4KPC9zdmc+',
-                        timestamp: new Date().toISOString()
-                    },
-                    {
-                        number: '67',
-                        name: 'มาลี ใจงาม',
-                        phone: '084-567-8901',
-                        status: 'pending',
-                        slipUrl: '', // No slip example
-                        timestamp: new Date().toISOString()
+                if (useLocalStorage) {
+                    // โหลดข้อมูลจาก Local Storage
+                    const savedData = localStorage.getItem('lotteryBookingData');
+                    if (savedData) {
+                        bookingData = JSON.parse(savedData);
+                        console.log('โหลดข้อมูลจาก Local Storage:', bookingData.length, 'รายการ');
+                    } else {
+                        // ข้อมูลตัวอย่างเริ่มต้น
+                        bookingData = [
+                            {
+                                number: '01',
+                                name: 'สมชาย ใจดี',
+                                phone: '081-234-5678',
+                                status: 'paid',
+                                slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iIzI3YWU2MCIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhbmsgVHJhbnNmZXI8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QW1vdW50OiA4MCBCYXRoPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EYXRlOiAyMDI0LTEyLTI2PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZWY6IDEyMzQ1Njc4OTA8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5TVUNDRVNTPC90ZXh0Pgo8L3N2Zz4=',
+                                timestamp: new Date().toISOString()
+                            },
+                            {
+                                number: '23',
+                                name: 'สมหญิง รักดี',
+                                phone: '082-345-6789',
+                                status: 'pending',
+                                slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2YzOWMxMiIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhbmsgVHJhbnNmZXI8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QW1vdW50OiA4MCBCYXRoPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EYXRlOiAyMDI0LTEyLTI2PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZWY6IDk4NzY1NDMyMTA8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5QRU5ESU5HPC90ZXh0Pgo8L3N2Zz4=',
+                                timestamp: new Date().toISOString()
+                            }
+                        ];
+                        saveToLocalStorage();
                     }
-                ];
+                } else {
+                    // พยายามเชื่อมต่อ Google Apps Script
+                    if (SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                        const response = await fetch(`${SCRIPT_URL}?action=getBookings`);
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            bookingData = data.bookings || [];
+                            console.log('โหลดข้อมูลจาก Google Sheets:', bookingData.length, 'รายการ');
+                        }
+                    } else {
+                        console.warn('กรุณาตั้งค่า SCRIPT_URL ก่อนใช้งาน');
+                        useLocalStorage = true;
+                        return loadBookingData(); // เรียกใหม่ด้วย Local Storage
+                    }
+                }
+                
                 updateUI();
                 
-                // Uncomment this for real Google Apps Script integration
-                /*
-                const response = await fetch(`${SCRIPT_URL}?action=getBookings`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    bookingData = data.bookings || [];
-                    updateUI();
-                }
-                */
             } catch (error) {
                 console.error('Error loading data:', error);
-                // Use sample data as fallback
-                updateUI();
+                // ใช้ Local Storage เป็น fallback
+                useLocalStorage = true;
+                await loadBookingData();
+            }
+        }
+
+        // บันทึกข้อมูลลง Local Storage
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('lotteryBookingData', JSON.stringify(bookingData));
+                console.log('บันทึกข้อมูลลง Local Storage สำเร็จ');
+            } catch (error) {
+                console.error('ไม่สามารถบันทึกข้อมูลลง Local Storage:', error);
             }
         }
 
@@ -1707,8 +1884,13 @@
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Delete booking logic here
+                    // ลบข้อมูล
                     bookingData = bookingData.filter(b => b.number !== number);
+                    
+                    if (useLocalStorage) {
+                        saveToLocalStorage();
+                    }
+                    
                     updateUI();
                     
                     Swal.fire({
@@ -1806,5 +1988,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d569a841e4ef69',t:'MTc1NDg5MDk3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d59a32f0f79fec',t:'MTc1NDg5Mjk2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
