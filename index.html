@@ -991,7 +991,7 @@
                     }
                 } else {
                     // พยายามเชื่อมต่อ Google Apps Script
-                    if (SCRIPT_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                    if (SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbwhtGZNC34KFlq42T-qHu-U70eT7lt2Onb2T37V9kfq3INkty9kGiAsrHTp6TG6oOgq/exec') {
                         const response = await fetch(`${SCRIPT_URL}?action=getBookings`);
                         const data = await response.json();
                         
