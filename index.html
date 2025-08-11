@@ -796,6 +796,45 @@
         // Load booking data
         async function loadBookingData() {
             try {
+                // For demo purposes, let's add some sample data with realistic slip images
+                bookingData = [
+                    {
+                        number: '01',
+                        name: 'สมชาย ใจดี',
+                        phone: '081-234-5678',
+                        status: 'paid',
+                        slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iIzI3YWU2MCIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhbmsgVHJhbnNmZXI8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QW1vdW50OiA4MCBCYXRoPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EYXRlOiAyMDI0LTEyLTI2PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZWY6IDEyMzQ1Njc4OTA8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5TVUNDRVNTPC90ZXh0Pgo8L3N2Zz4=',
+                        timestamp: new Date().toISOString()
+                    },
+                    {
+                        number: '23',
+                        name: 'สมหญิง รักดี',
+                        phone: '082-345-6789',
+                        status: 'pending',
+                        slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iI2YzOWMxMiIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhbmsgVHJhbnNmZXI8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSI4MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QW1vdW50OiA4MCBCYXRoPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTIwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5EYXRlOiAyMDI0LTEyLTI2PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMTYwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5SZWY6IDk4NzY1NDMyMTA8L3RleHQ+CiAgPHRleHQgeD0iMTAwIiB5PSIyMDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtd2VpZ2h0PSJib2xkIj5QRU5ESU5HPC90ZXh0Pgo8L3N2Zz4=',
+                        timestamp: new Date().toISOString()
+                    },
+                    {
+                        number: '45',
+                        name: 'วิชัย สุขใส',
+                        phone: '083-456-7890',
+                        status: 'paid',
+                        slipUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI1MCIgZmlsbD0iIzI3YWU2MCIvPgogIDx0ZXh0IHg9IjEwMCIgeT0iNDAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk1vYmlsZSBCYW5raW5nPC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iODAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0id2hpdGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkFtb3VudDogODAgQmF0aDwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9IjEyMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+RGF0ZTogMjAyNC0xMi0yNjwvdGV4dD4KICA8dGV4dCB4PSIxMDAiIHk9IjE2MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UmVmOiA1NTU2NjY3Nzc4PC90ZXh0PgogIDx0ZXh0IHg9IjEwMCIgeT0iMjAwIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXdlaWdodD0iYm9sZCI+U1VDQ0VTUzwvdGV4dD4KPC9zdmc+',
+                        timestamp: new Date().toISOString()
+                    },
+                    {
+                        number: '67',
+                        name: 'มาลี ใจงาม',
+                        phone: '084-567-8901',
+                        status: 'pending',
+                        slipUrl: '', // No slip example
+                        timestamp: new Date().toISOString()
+                    }
+                ];
+                updateUI();
+                
+                // Uncomment this for real Google Apps Script integration
+                /*
                 const response = await fetch(`${SCRIPT_URL}?action=getBookings`);
                 const data = await response.json();
                 
@@ -803,8 +842,11 @@
                     bookingData = data.bookings || [];
                     updateUI();
                 }
+                */
             } catch (error) {
                 console.error('Error loading data:', error);
+                // Use sample data as fallback
+                updateUI();
             }
         }
 
@@ -869,10 +911,20 @@
             bookingData.forEach(booking => {
                 const row = document.createElement('tr');
                 
-                // Create slip thumbnail
-                let slipThumbnail = '-';
-                if (booking.slipUrl) {
-                    slipThumbnail = `<img src="${booking.slipUrl}" alt="สลิป" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: transform 0.3s ease;" onclick="showImageModal('${booking.slipUrl}')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">`;
+                // Create slip thumbnail with better styling
+                let slipThumbnail = '<span style="color: #999; font-style: italic;">ไม่มีสลิป</span>';
+                if (booking.slipUrl && booking.slipUrl !== '') {
+                    slipThumbnail = `
+                        <div style="position: relative; display: inline-block;">
+                            <img src="${booking.slipUrl}" 
+                                 alt="สลิปโอนเงิน" 
+                                 style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; border: 2px solid #3498db; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" 
+                                 onclick="showImageModal('${booking.slipUrl}')" 
+                                 onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 15px rgba(52,152,219,0.3)'" 
+                                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                            <div style="position: absolute; bottom: -5px; right: -5px; background: #27ae60; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">✓</div>
+                        </div>
+                    `;
                 }
                 
                 row.innerHTML = `
@@ -1755,5 +1807,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d55c2867c7f88c',t:'MTc1NDg5MDQyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d569a841e4ef69',t:'MTc1NDg5MDk3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
