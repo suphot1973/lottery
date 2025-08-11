@@ -1,382 +1,1034 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบจองเลขท้ายสองตัว</title>
-  <link href="https://fonts.googleapis.com/css2?family=K2D:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-  <style>
-    /* CSS styles remain the same as previous version */
-    /* ... (unchanged CSS from previous version) ... */
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบออกเลขท้ายสองตัว - ฉลากกินแบ่งรัฐบาล</title>
+    <link href="https://fonts.googleapis.com/css2?family=K2D:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'K2D', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .admin-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .admin-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .summary-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .summary-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .summary-label {
+            font-size: 16px;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .number-card {
+            aspect-ratio: 1;
+            background: white;
+            border: 3px solid #3498db;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .number-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+
+        .number-card.selected {
+            background: #e74c3c;
+            color: white;
+            border-color: #c0392b;
+            cursor: not-allowed;
+        }
+
+        .number-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 16px;
+            color: white;
+        }
+
+        .data-table {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .table img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-delete {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .footer {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            margin-top: 50px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+        }
+
+        .file-upload {
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            background: #f8f9fa;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .status-paid {
+            background: #2ecc71;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #f39c12;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .numbers-grid {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                gap: 10px;
+            }
+
+            .number-card {
+                font-size: 18px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .table {
+                font-size: 14px;
+            }
+
+            .table th,
+            .table td {
+                padding: 8px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <!-- HTML structure remains the same as previous version -->
-  <!-- ... (unchanged HTML from previous version) ... -->
-  
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script>
-    // Configuration
-    const CONFIG = {
-      WEB_APP_URL: 'https://script.google.com/macros/s/AKfycbwhtGZNC34KFlq42T-qHu-U70eT7lt2Onb2T37V9kfq3INkty9kGiAsrHTp6TG6oOgq/exec',
-      ADMIN_PASSWORD: 'admin1234',
-      PRICE_PER_NUMBER: 100
-    };
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <h3>กำลังประมวลผล...</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="loadingText">กำลังเตรียมข้อมูล...</p>
+        </div>
+    </div>
 
-    // Global variables
-    let currentNumber = null;
-    let reservations = [];
-    let winningNumber = null;
-    let isAdmin = false;
+    <!-- Header -->
+    <div class="header">
+        <img src="https://raw.githubusercontent.com/suphot1973/Data/refs/heads/main/004.png" alt="Logo" class="logo">
+        <h1 class="title">ระบบออกเลขท้ายสองตัว</h1>
+        <p class="subtitle">ฉลากกินแบ่งรัฐบาล - ระบบจองหมายเลข</p>
+    </div>
 
-    // Initialize the number grid
-    function initNumberGrid() {
-      const grid = document.getElementById('numbersGrid');
-      grid.innerHTML = '';
-      
-      for (let i = 0; i < 100; i++) {
-        const num = i.toString().padStart(2, '0');
-        const card = document.createElement('div');
-        card.className = 'number-card';
-        card.textContent = num;
-        card.dataset.number = num;
-        card.id = `number-${num}`;
-        
-        // Add reserved class if number is reserved
-        const reservation = reservations.find(r => r.number === num);
-        if (reservation) {
-          card.classList.add(reservation.paymentStatus === 'paid' ? 'paid' : 'reserved');
-          const label = document.createElement('div');
-          label.className = 'reserved-label';
-          label.textContent = reservation.paymentStatus === 'paid' ? 'จ่ายแล้ว' : 'จองแล้ว';
-          card.appendChild(label);
-        }
-        
-        card.addEventListener('click', () => handleNumberClick(num, card));
-        grid.appendChild(card);
-      }
-    }
+    <div class="container">
+        <!-- Admin Panel -->
+        <div class="admin-panel">
+            <button class="admin-btn" onclick="adminLogin()">🔐 เข้าสู่ระบบผู้ดูแล</button>
+            <div id="adminControls" style="display: none; margin-top: 20px;">
+                <button class="btn btn-edit" onclick="manageNumbers()">จัดการหมายเลข</button>
+                <button class="btn btn-edit" onclick="announceWinner()">ประกาศผลรางวัล</button>
+                <button class="btn btn-edit" onclick="generateReport()">สร้างรายงาน</button>
+                <button class="btn btn-delete" onclick="resetSystem()">รีเซ็ตระบบ</button>
+            </div>
+        </div>
 
-    // Update summary cards
-    function updateSummaryCards() {
-      const reservedCount = reservations.length;
-      const paidCount = reservations.filter(r => r.paymentStatus === 'paid').length;
-      const totalAmount = paidCount * CONFIG.PRICE_PER_NUMBER;
-      const availableCount = 100 - reservedCount;
-      
-      document.getElementById('reservedCount').textContent = reservedCount;
-      document.getElementById('paidCount').textContent = paidCount;
-      document.getElementById('totalAmount').textContent = totalAmount.toLocaleString();
-      document.getElementById('availableCount').textContent = availableCount;
-    }
+        <!-- Summary Panel -->
+        <div class="summary-panel">
+            <div class="summary-card">
+                <div class="summary-number" id="totalSelected">0</div>
+                <div class="summary-label">หมายเลขที่จองแล้ว</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="totalPaid">0</div>
+                <div class="summary-label">จ่ายเงินแล้ว</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="totalAmount">0</div>
+                <div class="summary-label">จำนวนเงินรวม (บาท)</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-number" id="availableNumbers">100</div>
+                <div class="summary-label">หมายเลขที่เหลือ</div>
+            </div>
+        </div>
 
-    // Update winning number display
-    function updateWinningNumberDisplay() {
-      const display = document.getElementById('winningNumberDisplay');
-      if (winningNumber && winningNumber.number) {
-        display.innerHTML = `
-          <div style="text-align: center; font-size: 2rem; margin: 20px 0; background: rgba(46, 204, 113, 0.2); padding: 15px; border-radius: 10px;">
-            <span style="color: #ffd700; font-weight: 700;">งวดล่าสุด: ${winningNumber.date || 'ไม่ระบุ'}</span><br>
-            <span style="font-size: 3rem; color: #2ecc71; font-weight: 700;">${winningNumber.number}</span>
-          </div>
-        `;
-      } else {
-        display.innerHTML = '<p style="text-align: center; color: #e74c3c;">ยังไม่ได้ประกาศเลขถูกรางวัล</p>';
-      }
-    }
+        <!-- Numbers Grid -->
+        <div class="numbers-grid" id="numbersGrid">
+            <!-- Numbers will be generated by JavaScript -->
+        </div>
 
-    // Update admin table
-    function updateAdminTable() {
-      const tbody = document.getElementById('tableBody');
-      tbody.innerHTML = '';
-      
-      reservations.forEach(reservation => {
-        const row = document.createElement('tr');
-        
-        row.innerHTML = `
-          <td>${reservation.number}</td>
-          <td>${reservation.name}</td>
-          <td>${reservation.phone}</td>
-          <td><span class="${reservation.paymentStatus === 'paid' ? 'paid' : 'pending'}">${reservation.paymentStatus === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}</span></td>
-          <td>
-            ${reservation.slipUrl ? 
-              `<img src="${reservation.slipUrl}" class="thumbnail" alt="สลิปโอนเงิน" style="max-width: 60px; max-height: 60px;">` : 
-              '-'}
-          </td>
-          <td>
-            <button class="action-btn btn-edit" data-id="${reservation.id}"><i class="fas fa-edit"></i></button>
-            <button class="action-btn btn-delete" data-id="${reservation.id}"><i class="fas fa-trash"></i></button>
-          </td>
-        `;
-        
-        tbody.appendChild(row);
-      });
-    }
+        <!-- Data Table -->
+        <div class="data-table">
+            <h3>ข้อมูลการจอง</h3>
+            <table class="table" id="dataTable">
+                <thead>
+                    <tr>
+                        <th>หมายเลข</th>
+                        <th>ชื่อ</th>
+                        <th>เบอร์โทร</th>
+                        <th>สถานะ</th>
+                        <th>สลิป</th>
+                        <th>วันที่จอง</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Data will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-    // Handle number click
-    function handleNumberClick(number, element) {
-      if (element.classList.contains('reserved') || element.classList.contains('paid')) {
-        const reservation = reservations.find(r => r.number === number);
-        Swal.fire({
-          title: 'หมายเลขถูกจองแล้ว',
-          html: `หมายเลข <b>${number}</b> ถูกจองโดย<br>
-                 <b>${reservation.name}</b> (${reservation.phone})<br>
-                 สถานะ: <span class="${reservation.paymentStatus === 'paid' ? 'paid' : 'pending'}">${reservation.paymentStatus === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}</span>`,
-          icon: 'info',
-          confirmButtonText: 'ตกลง'
+    <!-- Booking Modal -->
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <h3>จองหมายเลข <span id="selectedNumber"></span></h3>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label class="form-label">ชื่อ-นามสกุล *</label>
+                    <input type="text" class="form-input" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">เบอร์โทรศัพท์ *</label>
+                    <input type="tel" class="form-input" id="customerPhone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">สถานะการจ่ายเงิน *</label>
+                    <select class="form-select" id="paymentStatus" required>
+                        <option value="">เลือกสถานะ</option>
+                        <option value="paid">จ่ายแล้ว</option>
+                        <option value="pending">รอจ่าย</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">อัปโหลดสลิปโอนเงิน</label>
+                    <div class="file-upload" onclick="document.getElementById('slipFile').click()">
+                        <input type="file" id="slipFile" accept="image/*">
+                        <p>📎 คลิกเพื่อเลือกไฟล์สลิป</p>
+                        <p id="fileName" style="color: #3498db; margin-top: 10px;"></p>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">บันทึกการจอง</button>
+                <button type="button" class="btn-secondary" onclick="closeModal('bookingModal')">ยกเลิก</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div class="modal" id="infoModal">
+        <div class="modal-content">
+            <h3>ข้อมูลการจอง</h3>
+            <div id="infoContent"></div>
+            <button type="button" class="btn-secondary" onclick="closeModal('infoModal')">ปิด</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>&copy; 2024 ระบบออกเลขท้ายสองตัว - ฉลากกินแบ่งรัฐบาล</p>
+        <p>พัฒนาโดย: ระบบจัดการหวยออนไลน์</p>
+    </div>
+
+    <script>
+        // Global variables
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwhtGZNC34KFlq42T-qHu-U70eT7lt2Onb2T37V9kfq3INkty9kGiAsrHTp6TG6oOgq/exec';
+        let bookingData = [];
+        let isAdmin = false;
+        let currentSelectedNumber = null;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            generateNumbersGrid();
+            loadBookingData();
+            setupEventListeners();
+            showWelcomeMessage();
         });
-      } else {
-        currentNumber = number;
-        document.getElementById('reserveNumber').textContent = number;
-        document.getElementById('reservationModal').style.display = 'flex';
-        
-        // Reset form
-        document.getElementById('name').value = '';
-        document.getElementById('phone').value = '';
-        document.getElementById('paymentStatus').value = 'pending';
-        document.getElementById('slip').value = '';
-      }
-    }
 
-    // Show progress overlay
-    function showProgress(message) {
-      const overlay = document.getElementById('progressOverlay');
-      const messageEl = document.getElementById('progressMessage');
-      messageEl.textContent = message;
-      overlay.style.display = 'flex';
-      
-      // Simulate progress
-      let progress = 0;
-      const progressFill = document.getElementById('progressFill');
-      const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 10) + 1;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
+        // Generate numbers grid (00-99)
+        function generateNumbersGrid() {
+            const grid = document.getElementById('numbersGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 100; i++) {
+                const numberStr = i.toString().padStart(2, '0');
+                const card = document.createElement('div');
+                card.className = 'number-card';
+                card.textContent = numberStr;
+                card.dataset.number = numberStr;
+                card.onclick = () => selectNumber(numberStr);
+                grid.appendChild(card);
+            }
         }
-        progressFill.style.width = `${progress}%`;
-      }, 200);
-      
-      return interval;
-    }
 
-    // Hide progress overlay
-    function hideProgress(interval) {
-      if (interval) clearInterval(interval);
-      document.getElementById('progressOverlay').style.display = 'none';
-      document.getElementById('progressFill').style.width = '0%';
-    }
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('slipFile').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('fileName').textContent = file.name;
+                }
+            });
 
-    // Admin login
-    function adminLogin() {
-      Swal.fire({
-        title: 'เข้าสู่ระบบ Admin',
-        html: `<input type="password" id="password" class="swal2-input" placeholder="รหัสผ่าน">`,
-        confirmButtonText: 'เข้าสู่ระบบ',
-        focusConfirm: false,
-        preConfirm: () => {
-          const password = Swal.getPopup().querySelector('#password').value;
-          if (password !== CONFIG.ADMIN_PASSWORD) {
-            Swal.showValidationMessage('รหัสผ่านไม่ถูกต้อง');
-          }
-          return password;
+            document.getElementById('bookingForm').addEventListener('submit', handleBookingSubmit);
         }
-      }).then((result) => {
-        if (result.isConfirmed) {
-          isAdmin = true;
-          document.getElementById('adminPanel').style.display = 'block';
-          document.getElementById('btnAdminLogin').innerHTML = '<i class="fas fa-user-cog"></i> Admin';
-          Swal.fire('เข้าสู่ระบบสำเร็จ!', '', 'success');
-        }
-      });
-    }
 
-    // Load data from Google Sheets
-    async function loadData() {
-      const progressInterval = showProgress('กำลังโหลดข้อมูล...');
-      
-      try {
-        // Fetch reservations
-        const response = await fetch(`${CONFIG.WEB_APP_URL}?action=getReservations`);
-        const data = await response.json();
-        
-        if (data.success) {
-          reservations = data.data || [];
-          updateSummaryCards();
-          initNumberGrid();
-          updateAdminTable();
-        } else {
-          throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลได้');
+        // Show welcome message
+        function showWelcomeMessage() {
+            Swal.fire({
+                title: 'ยินดีต้อนรับ!',
+                text: 'ระบบออกเลขท้ายสองตัว ฉลากกินแบ่งรัฐบาล',
+                icon: 'success',
+                confirmButtonText: 'เริ่มใช้งาน',
+                confirmButtonColor: '#3498db'
+            });
         }
-        
-        // Fetch winning number
-        const winResponse = await fetch(`${CONFIG.WEB_APP_URL}?action=getWinningNumber`);
-        const winData = await winResponse.json();
-        
-        if (winData.success) {
-          winningNumber = winData.data;
-          updateWinningNumberDisplay();
-        }
-        
-        hideProgress(progressInterval);
-      } catch (error) {
-        hideProgress(progressInterval);
-        Swal.fire('เกิดข้อผิดพลาด', `ไม่สามารถโหลดข้อมูล: ${error.message}`, 'error');
-      }
-    }
 
-    // Save reservation
-    async function saveReservation() {
-      const name = document.getElementById('name').value;
-      const phone = document.getElementById('phone').value;
-      const paymentStatus = document.getElementById('paymentStatus').value;
-      const fileInput = document.getElementById('slip');
-      const file = fileInput.files[0];
-      
-      if (!name || !phone) {
-        Swal.fire('กรอกข้อมูลไม่ครบ', 'กรุณากรอกชื่อและเบอร์โทรศัพท์', 'warning');
-        return;
-      }
-      
-      const progressInterval = showProgress('กำลังบันทึกข้อมูล...');
-      
-      try {
-        const formData = new FormData();
-        formData.append('action', 'saveReservation');
-        formData.append('number', currentNumber);
-        formData.append('name', name);
-        formData.append('phone', phone);
-        formData.append('paymentStatus', paymentStatus);
-        
-        // Add file if exists
-        if (file) {
-          formData.append('slip', file);
-        }
-        
-        const response = await fetch(CONFIG.WEB_APP_URL, {
-          method: 'POST',
-          body: formData
-        });
-        
-        const data = await response.json();
-        hideProgress(progressInterval);
-        
-        if (data.success) {
-          document.getElementById('reservationModal').style.display = 'none';
-          await loadData(); // Reload data
-          Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success');
-        } else {
-          throw new Error(data.message || 'บันทึกข้อมูลไม่สำเร็จ');
-        }
-      } catch (error) {
-        hideProgress(progressInterval);
-        Swal.fire('เกิดข้อผิดพลาด', `บันทึกข้อมูลไม่สำเร็จ: ${error.message}`, 'error');
-      }
-    }
+        // Admin login
+        async function adminLogin() {
+            const { value: password } = await Swal.fire({
+                title: 'เข้าสู่ระบบผู้ดูแล',
+                input: 'password',
+                inputLabel: 'รหัสผ่าน',
+                inputPlaceholder: 'กรุณาใส่รหัสผ่าน',
+                showCancelButton: true,
+                confirmButtonText: 'เข้าสู่ระบบ',
+                cancelButtonText: 'ยกเลิก',
+                confirmButtonColor: '#3498db'
+            });
 
-    // Announce winner
-    async function announceWinner() {
-      const { value: number } = await Swal.fire({
-        title: 'ประกาศเลขถูกรางวัล',
-        input: 'text',
-        inputLabel: 'กรอกหมายเลขที่ถูกรางวัล (00-99)',
-        inputPlaceholder: '00',
-        showCancelButton: true,
-        inputValidator: (value) => {
-          if (!value || value.length !== 2 || isNaN(value)) {
-            return 'กรุณากรอกหมายเลขที่ถูกต้อง (00-99)';
-          }
+            if (password === 'admin1234') {
+                isAdmin = true;
+                document.getElementById('adminControls').style.display = 'block';
+                Swal.fire({
+                    title: 'เข้าสู่ระบบสำเร็จ!',
+                    text: 'คุณสามารถจัดการระบบได้แล้ว',
+                    icon: 'success',
+                    confirmButtonColor: '#3498db'
+                });
+            } else if (password) {
+                Swal.fire({
+                    title: 'รหัสผ่านไม่ถูกต้อง!',
+                    text: 'กรุณาลองใหม่อีกครั้ง',
+                    icon: 'error',
+                    confirmButtonColor: '#e74c3c'
+                });
+            }
         }
-      });
-      
-      if (number) {
-        const progressInterval = showProgress('กำลังประกาศเลขถูกรางวัล...');
-        
-        try {
-          const formData = new FormData();
-          formData.append('action', 'announceWinner');
-          formData.append('winningNumber', number);
-          
-          const response = await fetch(CONFIG.WEB_APP_URL, {
-            method: 'POST',
-            body: formData
-          });
-          
-          const data = await response.json();
-          hideProgress(progressInterval);
-          
-          if (data.success) {
-            winningNumber = {
-              number: number,
-              date: new Date().toLocaleDateString('th-TH')
+
+        // Select number
+        function selectNumber(number) {
+            const card = document.querySelector(`[data-number="${number}"]`);
+            
+            if (card.classList.contains('selected')) {
+                // Show booking info
+                const booking = bookingData.find(b => b.number === number);
+                if (booking) {
+                    showBookingInfo(booking);
+                }
+                return;
+            }
+
+            currentSelectedNumber = number;
+            document.getElementById('selectedNumber').textContent = number;
+            openModal('bookingModal');
+        }
+
+        // Handle booking form submission
+        async function handleBookingSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                number: currentSelectedNumber,
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                status: document.getElementById('paymentStatus').value,
+                timestamp: new Date().toISOString()
             };
-            updateWinningNumberDisplay();
-            Swal.fire('ประกาศสำเร็จ!', `ประกาศหมายเลข ${number} เป็นหมายเลขถูกรางวัล`, 'success');
-          } else {
-            throw new Error(data.message || 'ประกาศไม่สำเร็จ');
-          }
-        } catch (error) {
-          hideProgress(progressInterval);
-          Swal.fire('เกิดข้อผิดพลาด', `ประกาศไม่สำเร็จ: ${error.message}`, 'error');
-        }
-      }
-    }
 
-    // Initialize the app
-    document.addEventListener('DOMContentLoaded', async () => {
-      // Load initial data
-      await loadData();
-      
-      // Event listeners
-      document.getElementById('btnAdminLogin').addEventListener('click', adminLogin);
-      document.getElementById('btnCancelReserve').addEventListener('click', () => {
-        document.getElementById('reservationModal').style.display = 'none';
-      });
-      
-      document.getElementById('btnConfirmReserve').addEventListener('click', saveReservation);
-      document.getElementById('btnAnnounceWinner').addEventListener('click', announceWinner);
-      document.getElementById('btnRefreshData').addEventListener('click', loadData);
-      
-      document.getElementById('btnPrintReport').addEventListener('click', async () => {
-        const progressInterval = showProgress('กำลังสร้างรายงาน...');
-        
-        try {
-          const response = await fetch(`${CONFIG.WEB_APP_URL}?action=generateReport`);
-          const data = await response.json();
-          hideProgress(progressInterval);
-          
-          if (data.success && data.pdfUrl) {
-            window.open(data.pdfUrl, '_blank');
-            Swal.fire('สร้างรายงานสำเร็จ', 'เปิดรายงาน PDF ในแท็บใหม่แล้ว', 'success');
-          } else {
-            throw new Error(data.message || 'ไม่สามารถสร้างรายงานได้');
-          }
-        } catch (error) {
-          hideProgress(progressInterval);
-          Swal.fire('เกิดข้อผิดพลาด', `ไม่สามารถสร้างรายงาน: ${error.message}`, 'error');
+            const fileInput = document.getElementById('slipFile');
+            let fileData = null;
+
+            if (fileInput.files[0]) {
+                fileData = await convertFileToBase64(fileInput.files[0]);
+            }
+
+            showLoading();
+            
+            try {
+                await submitBooking(formData, fileData);
+                closeModal('bookingModal');
+                resetBookingForm();
+                await loadBookingData();
+                
+                Swal.fire({
+                    title: 'จองสำเร็จ!',
+                    text: `จองหมายเลข ${currentSelectedNumber} เรียบร้อยแล้ว`,
+                    icon: 'success',
+                    confirmButtonColor: '#3498db'
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด!',
+                    text: 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่',
+                    icon: 'error',
+                    confirmButtonColor: '#e74c3c'
+                });
+            } finally {
+                hideLoading();
+            }
         }
-      });
-      
-      document.getElementById('btnSendNotifications').addEventListener('click', async () => {
-        const progressInterval = showProgress('กำลังส่งการแจ้งเตือน...');
-        
-        try {
-          const response = await fetch(`${CONFIG.WEB_APP_URL}?action=sendNotifications`);
-          const data = await response.json();
-          hideProgress(progressInterval);
-          
-          if (data.success) {
-            Swal.fire('ส่งการแจ้งเตือนสำเร็จ', 'แจ้งเตือนไปยัง Line OA และผู้เกี่ยวข้องแล้ว', 'success');
-          } else {
-            throw new Error(data.message || 'ส่งการแจ้งเตือนไม่สำเร็จ');
-          }
-        } catch (error) {
-          hideProgress(progressInterval);
-          Swal.fire('เกิดข้อผิดพลาด', `ส่งการแจ้งเตือนไม่สำเร็จ: ${error.message}`, 'error');
+
+        // Convert file to base64
+        function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve({
+                        data: base64,
+                        name: file.name,
+                        type: file.type
+                    });
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
         }
-      });
-    });
-  </script>
-</body>
+
+        // Submit booking to Google Apps Script
+        async function submitBooking(formData, fileData) {
+            const payload = {
+                action: 'addBooking',
+                data: formData,
+                file: fileData
+            };
+
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            return await response.json();
+        }
+
+        // Load booking data
+        async function loadBookingData() {
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=getBookings`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    bookingData = data.bookings || [];
+                    updateUI();
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Update UI with current data
+        function updateUI() {
+            updateNumbersGrid();
+            updateSummary();
+            updateDataTable();
+        }
+
+        // Update numbers grid
+        function updateNumbersGrid() {
+            const cards = document.querySelectorAll('.number-card');
+            cards.forEach(card => {
+                const number = card.dataset.number;
+                const booking = bookingData.find(b => b.number === number);
+                
+                if (booking) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+        }
+
+        // Update summary
+        function updateSummary() {
+            const totalSelected = bookingData.length;
+            const totalPaid = bookingData.filter(b => b.status === 'paid').length;
+            const totalAmount = totalPaid * 80; // Assuming 80 baht per number
+            const availableNumbers = 100 - totalSelected;
+
+            document.getElementById('totalSelected').textContent = totalSelected;
+            document.getElementById('totalPaid').textContent = totalPaid;
+            document.getElementById('totalAmount').textContent = totalAmount.toLocaleString();
+            document.getElementById('availableNumbers').textContent = availableNumbers;
+        }
+
+        // Update data table
+        function updateDataTable() {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+
+            bookingData.forEach(booking => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${booking.number}</td>
+                    <td>${booking.name}</td>
+                    <td>${booking.phone}</td>
+                    <td><span class="status-${booking.status}">${booking.status === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}</span></td>
+                    <td>${booking.slipUrl ? `<img src="${booking.slipUrl}" alt="สลิป">` : '-'}</td>
+                    <td>${new Date(booking.timestamp).toLocaleDateString('th-TH')}</td>
+                    <td>
+                        ${isAdmin ? `
+                            <button class="btn btn-edit" onclick="editBooking('${booking.number}')">แก้ไข</button>
+                            <button class="btn btn-delete" onclick="deleteBooking('${booking.number}')">ลบ</button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Show booking info
+        function showBookingInfo(booking) {
+            const content = `
+                <p><strong>หมายเลข:</strong> ${booking.number}</p>
+                <p><strong>ชื่อ:</strong> ${booking.name}</p>
+                <p><strong>เบอร์โทร:</strong> ${booking.phone}</p>
+                <p><strong>สถานะ:</strong> ${booking.status === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}</p>
+                <p><strong>วันที่จอง:</strong> ${new Date(booking.timestamp).toLocaleDateString('th-TH')}</p>
+                ${booking.slipUrl ? `<p><strong>สลิป:</strong> <img src="${booking.slipUrl}" style="max-width: 200px; border-radius: 8px;"></p>` : ''}
+                <div style="background: #e74c3c; color: white; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;">
+                    <strong>หมายเลขนี้จองแล้ว</strong>
+                </div>
+            `;
+            
+            document.getElementById('infoContent').innerHTML = content;
+            openModal('infoModal');
+        }
+
+        // Admin functions
+        function manageNumbers() {
+            if (!isAdmin) return;
+            
+            Swal.fire({
+                title: 'จัดการหมายเลข',
+                text: 'ฟีเจอร์นี้อยู่ระหว่างการพัฒนา',
+                icon: 'info',
+                confirmButtonColor: '#3498db'
+            });
+        }
+
+        function announceWinner() {
+            if (!isAdmin) return;
+            
+            Swal.fire({
+                title: 'ประกาศผลรางวัล',
+                input: 'text',
+                inputLabel: 'หมายเลขที่ถูกรางวัล',
+                inputPlaceholder: 'กรุณาใส่หมายเลข 2 หลัก',
+                showCancelButton: true,
+                confirmButtonText: 'ประกาศ',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    const winningNumber = result.value.padStart(2, '0');
+                    const winner = bookingData.find(b => b.number === winningNumber);
+                    
+                    if (winner) {
+                        Swal.fire({
+                            title: 'ยินดีด้วย! 🎉',
+                            html: `
+                                <p>หมายเลขที่ถูกรางวัล: <strong>${winningNumber}</strong></p>
+                                <p>ผู้ถูกรางวัล: <strong>${winner.name}</strong></p>
+                                <p>เบอร์โทร: <strong>${winner.phone}</strong></p>
+                            `,
+                            icon: 'success',
+                            confirmButtonColor: '#3498db'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'ไม่พบผู้จอง',
+                            text: `ไม่มีผู้จองหมายเลข ${winningNumber}`,
+                            icon: 'warning',
+                            confirmButtonColor: '#f39c12'
+                        });
+                    }
+                }
+            });
+        }
+
+        function generateReport() {
+            if (!isAdmin) return;
+            
+            const reportData = {
+                totalNumbers: bookingData.length,
+                paidNumbers: bookingData.filter(b => b.status === 'paid').length,
+                pendingNumbers: bookingData.filter(b => b.status === 'pending').length,
+                totalRevenue: bookingData.filter(b => b.status === 'paid').length * 80,
+                date: new Date().toLocaleDateString('th-TH')
+            };
+
+            Swal.fire({
+                title: 'รายงานสรุป',
+                html: `
+                    <div style="text-align: left;">
+                        <p><strong>วันที่:</strong> ${reportData.date}</p>
+                        <p><strong>จำนวนหมายเลขที่จองทั้งหมด:</strong> ${reportData.totalNumbers}</p>
+                        <p><strong>จ่ายเงินแล้ว:</strong> ${reportData.paidNumbers}</p>
+                        <p><strong>รอจ่าย:</strong> ${reportData.pendingNumbers}</p>
+                        <p><strong>รายได้รวม:</strong> ${reportData.totalRevenue.toLocaleString()} บาท</p>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'พิมพ์รายงาน',
+                showCancelButton: true,
+                cancelButtonText: 'ปิด'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.print();
+                }
+            });
+        }
+
+        function resetSystem() {
+            if (!isAdmin) return;
+            
+            Swal.fire({
+                title: 'รีเซ็ตระบบ',
+                text: 'คุณแน่ใจหรือไม่ที่จะลบข้อมูลทั้งหมด?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: 'ใช่, รีเซ็ต!',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Reset system logic here
+                    Swal.fire({
+                        title: 'รีเซ็ตสำเร็จ!',
+                        text: 'ระบบได้รีเซ็ตเรียบร้อยแล้ว',
+                        icon: 'success',
+                        confirmButtonColor: '#3498db'
+                    });
+                }
+            });
+        }
+
+        function editBooking(number) {
+            if (!isAdmin) return;
+            
+            const booking = bookingData.find(b => b.number === number);
+            if (booking) {
+                // Populate form with existing data
+                document.getElementById('customerName').value = booking.name;
+                document.getElementById('customerPhone').value = booking.phone;
+                document.getElementById('paymentStatus').value = booking.status;
+                currentSelectedNumber = number;
+                document.getElementById('selectedNumber').textContent = number;
+                openModal('bookingModal');
+            }
+        }
+
+        function deleteBooking(number) {
+            if (!isAdmin) return;
+            
+            Swal.fire({
+                title: 'ลบข้อมูล',
+                text: `คุณแน่ใจหรือไม่ที่จะลบการจองหมายเลข ${number}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e74c3c',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: 'ใช่, ลบ!',
+                cancelButtonText: 'ยกเลิก'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Delete booking logic here
+                    bookingData = bookingData.filter(b => b.number !== number);
+                    updateUI();
+                    
+                    Swal.fire({
+                        title: 'ลบสำเร็จ!',
+                        text: 'ข้อมูลได้ถูกลบเรียบร้อยแล้ว',
+                        icon: 'success',
+                        confirmButtonColor: '#3498db'
+                    });
+                }
+            });
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Reset booking form
+        function resetBookingForm() {
+            document.getElementById('bookingForm').reset();
+            document.getElementById('fileName').textContent = '';
+            currentSelectedNumber = null;
+        }
+
+        // Loading functions
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            updateProgress(0);
+            
+            // Simulate progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                updateProgress(progress);
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                }
+            }, 200);
+        }
+
+        function hideLoading() {
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }, 500);
+        }
+
+        function updateProgress(percentage) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+            
+            let text = 'กำลังเตรียมข้อมูล...';
+            if (percentage > 20) text = 'กำลังอัปโหลดไฟล์...';
+            if (percentage > 50) text = 'กำลังบันทึกข้อมูล...';
+            if (percentage > 80) text = 'เกือบเสร็จแล้ว...';
+            if (percentage >= 100) text = 'เสร็จสิ้น!';
+            
+            document.getElementById('loadingText').textContent = text;
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d5253ea32f6bd3',t:'MTc1NDg4ODE3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
