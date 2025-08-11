@@ -143,16 +143,31 @@
             background: #e74c3c;
             color: white;
             border-color: #c0392b;
-            cursor: not-allowed;
+            cursor: pointer;
+            flex-direction: column;
+            font-size: 16px;
+            padding: 8px;
+        }
+
+        .number-card.selected.paid {
+            background: #27ae60;
+            border-color: #229954;
         }
 
         .number-card.selected::after {
             content: '✓';
             position: absolute;
-            top: 5px;
-            right: 5px;
-            font-size: 16px;
+            top: 3px;
+            right: 3px;
+            font-size: 12px;
             color: white;
+        }
+
+        .card-status {
+            font-size: 10px;
+            margin-top: 2px;
+            font-weight: 500;
+            text-align: center;
         }
 
         .data-table {
@@ -187,6 +202,43 @@
             height: 50px;
             object-fit: cover;
             border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .table img:hover {
+            transform: scale(1.1);
+        }
+
+        .slip-preview {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 2px solid #3498db;
+        }
+
+        .file-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .file-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            border: 2px solid #3498db;
+        }
+
+        .remove-preview {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 12px;
         }
 
         .btn {
@@ -512,6 +564,11 @@
                         <p>📎 คลิกเพื่อเลือกไฟล์สลิป</p>
                         <p id="fileName" style="color: #3498db; margin-top: 10px;"></p>
                     </div>
+                    <div class="file-preview" id="filePreview" style="display: none;">
+                        <img id="previewImage" alt="Preview">
+                        <br>
+                        <button type="button" class="remove-preview" onclick="removePreview()">ลบรูปภาพ</button>
+                    </div>
                 </div>
                 <button type="submit" class="btn-primary">บันทึกการจอง</button>
                 <button type="button" class="btn-secondary" onclick="closeModal('bookingModal')">ยกเลิก</button>
@@ -525,6 +582,17 @@
             <h3>ข้อมูลการจอง</h3>
             <div id="infoContent"></div>
             <button type="button" class="btn-secondary" onclick="closeModal('infoModal')">ปิด</button>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal" id="imageModal">
+        <div class="modal-content" style="max-width: 80%; max-height: 80%;">
+            <h3>สลิปโอนเงิน</h3>
+            <div style="text-align: center; margin: 20px 0;">
+                <img id="modalImage" style="max-width: 100%; max-height: 70vh; border-radius: 8px;">
+            </div>
+            <button type="button" class="btn-secondary" onclick="closeModal('imageModal')">ปิด</button>
         </div>
     </div>
 
@@ -571,6 +639,7 @@
                 const file = e.target.files[0];
                 if (file) {
                     document.getElementById('fileName').textContent = file.name;
+                    previewFile(file);
                 }
             });
 
@@ -755,8 +824,21 @@
                 
                 if (booking) {
                     card.classList.add('selected');
+                    if (booking.status === 'paid') {
+                        card.classList.add('paid');
+                    } else {
+                        card.classList.remove('paid');
+                    }
+                    
+                    // Update card content
+                    const statusText = booking.status === 'paid' ? 'จ่ายแล้ว' : 'จองแล้ว';
+                    card.innerHTML = `
+                        ${number}
+                        <div class="card-status">${statusText}</div>
+                    `;
                 } else {
-                    card.classList.remove('selected');
+                    card.classList.remove('selected', 'paid');
+                    card.innerHTML = number;
                 }
             });
         }
@@ -786,7 +868,7 @@
                     <td>${booking.name}</td>
                     <td>${booking.phone}</td>
                     <td><span class="status-${booking.status}">${booking.status === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}</span></td>
-                    <td>${booking.slipUrl ? `<img src="${booking.slipUrl}" alt="สลิป">` : '-'}</td>
+                    <td>${booking.slipUrl ? `<img src="${booking.slipUrl}" alt="สลิป" onclick="showImageModal('${booking.slipUrl}')">` : '-'}</td>
                     <td>${new Date(booking.timestamp).toLocaleDateString('th-TH')}</td>
                     <td>
                         ${isAdmin ? `
@@ -807,7 +889,7 @@
                 <p><strong>เบอร์โทร:</strong> ${booking.phone}</p>
                 <p><strong>สถานะ:</strong> ${booking.status === 'paid' ? 'จ่ายแล้ว' : 'รอจ่าย'}</p>
                 <p><strong>วันที่จอง:</strong> ${new Date(booking.timestamp).toLocaleDateString('th-TH')}</p>
-                ${booking.slipUrl ? `<p><strong>สลิป:</strong> <img src="${booking.slipUrl}" style="max-width: 200px; border-radius: 8px;"></p>` : ''}
+                ${booking.slipUrl ? `<p><strong>สลิป:</strong><br><img src="${booking.slipUrl}" class="slip-preview" onclick="showImageModal('${booking.slipUrl}')"></p>` : ''}
                 <div style="background: #e74c3c; color: white; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center;">
                     <strong>หมายเลขนี้จองแล้ว</strong>
                 </div>
@@ -978,10 +1060,34 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
+        // Preview file function
+        function previewFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImage').src = e.target.result;
+                document.getElementById('filePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove preview function
+        function removePreview() {
+            document.getElementById('filePreview').style.display = 'none';
+            document.getElementById('slipFile').value = '';
+            document.getElementById('fileName').textContent = '';
+        }
+
+        // Show image modal
+        function showImageModal(imageUrl) {
+            document.getElementById('modalImage').src = imageUrl;
+            openModal('imageModal');
+        }
+
         // Reset booking form
         function resetBookingForm() {
             document.getElementById('bookingForm').reset();
             document.getElementById('fileName').textContent = '';
+            document.getElementById('filePreview').style.display = 'none';
             currentSelectedNumber = null;
         }
 
@@ -1030,5 +1136,5 @@
             });
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d5253ea32f6bd3',t:'MTc1NDg4ODE3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96d53cd0678a3104',t:'MTc1NDg4OTE0Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
